@@ -68,7 +68,10 @@ ai-buddy/
   data/seed/*.json     # сиды: users, teams, checklist, accesses, contacts (роль 1 — контент, роли 3/5 — загрузка)
   config/flags.yaml    # feature flags
   e2e/                 # Playwright e2e по сценариям (роль 1)
-  docs/                # architecture.md, adr/, security.md, metrics.md, demo-script.md, presentation/
+  infra/observability/ # Prometheus + Grafana, дашборд метрик (роль 1)
+  scripts/coverage/    # сводный отчёт покрытия, `make cover` (роль 2)
+  docs/                # architecture.md, adr/ (каждый пишет свои), security.md, metrics.md, demo-script.md, presentation/
+  docs/team/           # промпты ролей и разбор ТЗ (уже в репозитории)
   .github/workflows/ci.yml
 ```
 
@@ -201,8 +204,9 @@ Go (актуальная стабильная, ≥ 1.23), chi (роутер), pg
 4. **Жизненный цикл действий (S3, S4, S5)**: `POST /api/actions/{id}/confirm` → проверить владельца и статус → идемпотентность по `Idempotency-Key` (Redis, TTL 24 ч) → `POST corp-mock /api/v1/requests/{external_id}/submit` с JWT пользователя (контракт D) → сохранить результат → связанная задача чек-листа переходит в `in_progress`/`done`. `cancel`, `GET /api/actions` с обновлением статусов из corp-mock (кэш в Redis 5 с). Аудит-лог всех действий (кто, что, когда, результат) — таблица `core.audit_log`.
 5. **ИИ-крон (имитация внутреннего ИИ-крона Авито)**: фоновый планировщик внутри сервиса (интервал из конфига, в демо 1 мин), который: находит просроченные задачи и создаёт `Notification(kind=reminder)` с дружелюбным текстом; синхронизирует статусы заявок и создаёт `Notification(kind=action_status)` при смене статуса. Под флагом `proactive_reminders`. Защита от дублей (одно напоминание на задачу в сутки).
 6. **Feature flags**: чтение `config/flags.yaml` (runtime-перечитывание по SIGHUP или раз в N секунд), `GET /api/flags`, проверка флагов сценариев на бэкенде (выключенный сценарий не выполняется, даже если фронт прислал запрос).
-7. **Аналитика (имитация Clickstream)**: `POST /api/events` (валидация имени из общего списка, батч), серверные события (`action_proposed`, `action_completed`, `action_failed`, `task_status_changed`, `assistant_answer_shown`) пишутся автоматически; таблица `core.events` — источник для Grafana (дашборд делает роль 5).
-8. **Прочее**: `/api/me`, `/api/notifications`, `/api/feedback`, `/api/mentor/interns`, `/api/health` (проверяет БД и Redis), `/metrics`. CORS для фронта. Graceful shutdown. Конфиг только из env. Dockerfile (multi-stage, distroless/alpine).
+7. **Аналитика (имитация Clickstream)**: `POST /api/events` (валидация имени из общего списка, батч), серверные события (`action_proposed`, `action_completed`, `action_failed`, `task_status_changed`, `assistant_answer_shown`) пишутся автоматически; таблица `core.events` — источник для Grafana (дашборд делает роль 1, я согласую с ней поля и индексы).
+8. **Прочее**: `/api/me`, `/api/notifications`, `/api/feedback`, `/api/health` (проверяет БД и Redis), `/metrics`. `/api/mentor/interns` — **необязательно, в последнюю очередь**, если всё остальное готово и покрыто тестами.
+9. **ADR** (`docs/adr/`, формат задаёт роль 5): 1–2 записи о своих решениях — например, подтверждение действий человеком и идемпотентность, слои и выбор pgx/sqlc. CORS для фронта. Graceful shutdown. Конфиг только из env. Dockerfile (multi-stage, distroless/alpine).
 
 ## Схема БД (предложи DDL и обоснуй)
 `users`, `teams`, `tasks` (user_id, template_id, stage_id, status, due_date, updated_at), `chat_messages` (jsonb sources/suggestions, status), `actions` (type, status, fields jsonb, external_id, result jsonb, error, idempotency_key), `notifications`, `feedback`, `events`, `audit_log`. Индексы под реальные запросы. Сиды загружаются командой `core-api seed` (идемпотентно) при старте в Docker.
@@ -227,7 +231,7 @@ LLM и RAG (роль 4), имитации корпоративных серви�
 2. Спецификации `openspec/specs/core-auth/`, `core-onboarding/`, `core-actions/` (Requirements + `#### Scenario:` WHEN/THEN, особенно отказ по правам, идемпотентность, деградация агента).
 3. `api/openapi.yaml` по контракту A — он нужен фронтенду в первые часы.
 4. Код по модулям в порядке: каркас + config + health → миграции + seed → auth/rbac → onboarding + next_steps → chat (сначала со стабом агента) → actions (со стабом corp-mock) → notifications + cron → flags → events → metrics. Тесты — вместе с каждым модулем, табличные.
-5. В конце: `make test`, `make cover` (HTML-отчёт в `core-api/coverage/`), раздел README «core-api».
+5. В конце: `make test`, `make cover` (HTML-отчёт в `core-api/coverage/`, файл `coverage.out` — его подхватывает сводный отчёт роли 2), ADR, раздел README «core-api». `/api/mentor/interns` — только если остаётся время.
 
 Отдавай код целыми файлами с путями. Обрабатывай все ошибки, никакого `panic` в рантайме, контексты с таймаутами на все внешние вызовы, никаких секретов и персональных данных в логах (токены — маскировать).
 
