@@ -5,3 +5,4 @@ referencing==0.37.0
 rfc3339-validator==0.1.4
 PyYAML==6.0.3
 tzdata==2025.2
+mcp==2.3.0

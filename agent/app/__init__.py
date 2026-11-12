@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+from typing import Callable
+
 from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
 
 from . import contract
 from .chat import answer
 from .context import InvalidRequest
+from .tools import Tools, tools_from_env
 
 SERVICE = "agent"
 VERSION = "0.1.0"
@@ -41,7 +44,8 @@ def error_response(status: int, message: str | None = None):
     return jsonify({"error": {"code": code, "message": message or ERROR_MESSAGES[code]}}), status
 
 
-def create_app() -> Flask:
+def create_app(tools_factory: Callable[[str, str], Tools] = tools_from_env) -> Flask:
+    """`tools_factory(token, request_id)` даёт клиенты инструментов; в тестах его подменяют."""
     app = Flask(__name__)
     app.json.ensure_ascii = False
 
@@ -51,7 +55,7 @@ def create_app() -> Flask:
 
     @app.post("/v1/chat")
     def chat():
-        # Токен не проверяем и не читаем: его подписал core-api, агент лишь пересылает его соседям (A4).
+        # Токен не проверяем: его подписал core-api, агент лишь пересылает его соседям (A4).
         token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
         if not request.headers.get("Authorization", "").startswith("Bearer ") or not token:
             return error_response(401)
@@ -61,7 +65,7 @@ def create_app() -> Flask:
             app.logger.info("запрос не по контракту B: %s", "; ".join(problems))
             return error_response(422)
         try:
-            return jsonify(answer(body))
+            return jsonify(answer(body, tools_factory(token, body["request_id"])))
         except InvalidRequest as exc:
             return error_response(422, str(exc))
 

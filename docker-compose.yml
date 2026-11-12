@@ -78,9 +78,9 @@ services:
       additional_contexts: { contracts: ./contracts }
     environment:
       PORT: "8090"
-      KNOWLEDGE_URL: http://knowledge-service:8060
-      CORP_MOCK_URL: http://corp-mock:8070
-      MCP_URL: http://corp-mock:8070/mcp
+      # Пока knowledge-service и corp-mock не готовы, агента можно направить на заглушки — см. .env.example.
+      KNOWLEDGE_URL: ${AGENT_KNOWLEDGE_URL:-http://knowledge-service:8060}
+      MCP_URL: ${AGENT_MCP_URL:-http://corp-mock:8070/mcp}
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
