@@ -36,11 +36,15 @@ class FakeTools(Tools):
 
     def search(self, query, top_k=3):
         self.calls.append(("knowledge_search", {"query": query, "top_k": top_k}))
-        return self._run("knowledge_search", lambda: self._respond("knowledge_search"))
+        return self.traced("knowledge_search", lambda: self._respond("knowledge_search"))
 
-    def mcp(self, tool, arguments=None):
-        self.calls.append((tool, arguments or {}))
-        return self._run(tool, lambda: self._respond(tool))
+    def _mcp(self, tool, arguments):
+        self.calls.append((tool, arguments))
+        result = self._respond(tool)
+        if tool == "absence_create_draft":  # как настоящий corp-mock: черновик хранит переданные даты
+            result["payload"] = {"kind": arguments["kind"], "date_from": arguments["date_from"],
+                                 "date_to": arguments["date_to"], "comment": None}
+        return result
 
     def _respond(self, name):
         value = self.responses[name]
@@ -66,4 +70,4 @@ def client(tools_responses, made_tools):
         made_tools.append(tools)
         return tools
 
-    return create_app(factory).test_client()
+    return create_app(factory, lambda: None).test_client()

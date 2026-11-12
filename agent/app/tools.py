@@ -40,17 +40,30 @@ class Tools:
     request_id: str
     timeout: float = 5.0
     trace: list[dict[str, Any]] = field(default_factory=list)
+    # Созданные черновики по ключу идемпотентности: запасной режим после сбоя модели берёт их отсюда,
+    # а не создаёт заново (A6).
+    drafts: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def search(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
-        return self._run("knowledge_search", lambda: self._post(f"{self.knowledge_url}/v1/search", {"query": query, "top_k": top_k})["results"])
+        return self.traced("knowledge_search", lambda: self._post(f"{self.knowledge_url}/v1/search", {"query": query, "top_k": top_k})["results"])
 
     def mcp(self, tool: str, arguments: dict[str, Any] | None = None) -> dict[str, Any]:
-        return self._run(tool, lambda: asyncio.run(asyncio.wait_for(self._call_tool(tool, arguments or {}), self.timeout)))
+        key = (arguments or {}).get("idempotency_key")
+        if key in self.drafts:
+            return self.drafts[key]
+        result = self.traced(tool, lambda: self._mcp(tool, arguments or {}))
+        if key:
+            self.drafts[key] = result
+        return result
+
+    def _mcp(self, tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
+        return asyncio.run(asyncio.wait_for(self._call_tool(tool, arguments), self.timeout))
 
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.token}", "X-Request-Id": self.request_id}
 
-    def _run(self, name: str, call: Callable[[], Any]) -> Any:
+    def traced(self, name: str, call: Callable[[], Any]) -> Any:
+        """Выполнить вызов и записать его в `trace`. Любой сбой, кроме ошибки контракта, — `unavailable`."""
         started, code = time.monotonic(), None
         try:
             return call()

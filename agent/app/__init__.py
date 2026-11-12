@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Callable
 
 from flask import Flask, jsonify, request
@@ -10,6 +11,7 @@ from werkzeug.exceptions import HTTPException
 from . import contract
 from .chat import answer
 from .context import InvalidRequest
+from .llm import ChatModel, model_from_env
 from .tools import Tools, tools_from_env
 
 SERVICE = "agent"
@@ -44,8 +46,13 @@ def error_response(status: int, message: str | None = None):
     return jsonify({"error": {"code": code, "message": message or ERROR_MESSAGES[code]}}), status
 
 
-def create_app(tools_factory: Callable[[str, str], Tools] = tools_from_env) -> Flask:
-    """`tools_factory(token, request_id)` даёт клиенты инструментов; в тестах его подменяют."""
+def create_app(tools_factory: Callable[[str, str], Tools] = tools_from_env,
+               model_factory: Callable[[], ChatModel | None] = model_from_env) -> Flask:
+    """`tools_factory(token, request_id)` даёт клиенты инструментов, `model_factory()` — модель или None
+    (режим без модели). В тестах обе подменяют."""
+    model = model_factory()
+    max_tool_calls = int(os.environ.get("LLM_MAX_TOOL_CALLS", "5"))
+    llm_timeout = float(os.environ.get("LLM_TIMEOUT_SECONDS", "25"))
     app = Flask(__name__)
     app.json.ensure_ascii = False
 
@@ -65,7 +72,8 @@ def create_app(tools_factory: Callable[[str, str], Tools] = tools_from_env) -> F
             app.logger.info("запрос не по контракту B: %s", "; ".join(problems))
             return error_response(422)
         try:
-            return jsonify(answer(body, tools_factory(token, body["request_id"])))
+            tools = tools_factory(token, body["request_id"])
+            return jsonify(answer(body, tools, model, max_tool_calls, llm_timeout))
         except InvalidRequest as exc:
             return error_response(422, str(exc))
 

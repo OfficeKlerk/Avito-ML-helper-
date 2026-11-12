@@ -85,6 +85,8 @@ services:
       LLM_BASE_URL: ${LLM_BASE_URL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_MODEL: ${LLM_MODEL:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-25}
+      LLM_MAX_TOOL_CALLS: ${LLM_MAX_TOOL_CALLS:-5}
     ports:
       - "${AGENT_PORT:-8090}:8090"
     depends_on:

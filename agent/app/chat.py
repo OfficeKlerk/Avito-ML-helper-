@@ -1,33 +1,54 @@
-"""Ответ на сообщение без LLM: контекст (A2), распознавание (A3), инструменты (A4) и ответ по контракту B (A5)."""
+"""Ответ на сообщение: с моделью (A6) или по правилам (A3–A5), в формате контракта B."""
 
 from __future__ import annotations
 
-from datetime import date
 from typing import Any
 
 from .context import Context, build_context
 from .intents import Understanding, understand
+from .llm import ChatModel, LlmError
+from .llm_agent import answer_with_model
+from .reply import KIND_WORD, draft_action, period, response
 from .tools import Tools, ToolError
 
-KIND_WORD = {"day_off": "отгул", "vacation": "отпуск"}
-KIND_TITLE = {"day_off": "Отгул", "vacation": "Отпуск"}
 ASK_DATE_SUGGESTIONS = ["Завтра", "В пятницу"]
 
 
-def answer(body: dict[str, Any], tools: Tools) -> dict[str, Any]:
+def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
+           max_tool_calls: int = 5, timeout: float = 25.0) -> dict[str, Any]:
     ctx = build_context(body)
-    nlu = understand(body["message"], ctx.today, body["state"])
-    if nlu.intent == "next_steps":
-        result = next_steps(ctx)
-    elif nlu.intent == "absence":
-        result = absence(ctx, nlu, tools, body["request_id"])
-    else:
-        result = unknown(tools)
+    result = None
+    if model is not None:
+        try:
+            result = answer_with_model(body, ctx, tools, model, max_tool_calls, timeout)
+        except ToolError:
+            pass  # модель не ответила — неудачный шаг llm уже в trace
+        except LlmError:
+            tools.trace.append({"tool": "llm", "ok": False, "ms": 0, "error_code": "unavailable"})
+    fell_back = result is None and model is not None
+    if result is None:
+        result = answer_by_rules(body, ctx, tools)
+    # Черновики, созданные в этом запросе, всегда видны пользователю — даже если модель упала после создания.
+    shown = {action["external_id"] for action in result["proposed_actions"]}
+    missed = [draft_action(d) for d in tools.drafts.values() if d["id"] not in shown]
+    if missed:
+        result["proposed_actions"] += missed
+        if fell_back:
+            result["text"] += "\n\nЧерновик заявки, который я успел подготовить, — в карточке. Проверь его и подтверди."
     result["trace"] = tools.trace
     # Отказ по правам или неверные даты — нормальный ответ. Упрощённый режим — только когда сервис не ответил.
     if any(step["error_code"] == "unavailable" for step in tools.trace):
         result["status"] = "degraded"
     return result
+
+
+def answer_by_rules(body: dict[str, Any], ctx: Context, tools: Tools) -> dict[str, Any]:
+    nlu = understand(body["message"], ctx.today, body["state"])
+    if nlu.intent == "next_steps":
+        return next_steps(ctx)
+    if nlu.intent == "absence":
+        return absence(ctx, nlu, tools, body["request_id"])
+    return unknown(tools)
 
 
 def next_steps(ctx: Context) -> dict[str, Any]:
@@ -66,20 +87,13 @@ def absence(ctx: Context, nlu: Understanding, tools: Tools, request_id: str) -> 
                             state={**asking, "date_from": nlu.date_from.isoformat(), "date_to": nlu.date_to.isoformat()})
         return response(exc.message, sources=sources)
 
-    approver = (draft.get("approver") or {}).get("name") or "руководитель команды"
+    action = draft_action(draft)
     warn = [name for name in (ctx.mentor, ctx.manager) if name]
     reminder = f" И не забудь заранее предупредить: {', '.join(warn)}." if warn else ""
     return response(
         f"Я подготовил черновик заявки: {word} {dates}. Проверь его и подтверди — только тогда заявка уйдёт "
-        f"на согласование ({approver}).{reminder}",
-        sources=sources,
-        proposed_actions=[{
-            "type": "absence_request",
-            "title": draft.get("summary") or f"{KIND_TITLE[nlu.kind]} {dates}",
-            "external_id": draft["id"],
-            "fields": {"Тип": KIND_TITLE[nlu.kind], "Даты": dates.removeprefix("на "), "Согласует": approver},
-        }],
-        suggestions=["Что ещё сделать на этой неделе?"],
+        f"на согласование ({action['fields']['Согласует']}).{reminder}",
+        sources=sources, proposed_actions=[action], suggestions=["Что ещё сделать на этой неделе?"],
     )
 
 
@@ -117,23 +131,3 @@ def find_sources(tools: Tools, query: str) -> list[dict[str, Any]]:
 def ask_date(question: str, state: dict[str, Any], sources: list[dict[str, Any]]) -> dict[str, Any]:
     return response(f"{question} Если дней несколько, напиши первый и последний.", sources=sources,
                     missing_fields=["date_from", "date_to"], state=state, suggestions=ASK_DATE_SUGGESTIONS)
-
-
-def period(start: date, end: date) -> str:
-    return f"на {start:%d.%m.%Y}" if start == end else f"с {start:%d.%m.%Y} по {end:%d.%m.%Y}"
-
-
-def response(text: str, **fields: Any) -> dict[str, Any]:
-    return {
-        "text": text,
-        "sources": [],
-        "proposed_actions": [],
-        "task_updates": [],
-        "suggestions": [],
-        "missing_fields": [],
-        "escalation": {"needed": False, "contact": None},
-        "state": None,
-        "status": "ok",
-        "trace": [],
-        **fields,
-    }
