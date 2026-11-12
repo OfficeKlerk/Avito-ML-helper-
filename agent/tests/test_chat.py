@@ -201,3 +201,10 @@ def test_unknown_question_without_contact(client, body, tools_responses):
 def test_tools_get_user_token_and_request_id(client, body, made_tools):
     post(client, body, {"Authorization": "Bearer user-jwt"})
     assert (made_tools[-1].token, made_tools[-1].request_id) == ("user-jwt", body["request_id"])
+
+
+@pytest.mark.parametrize("request_id", ["rq-Анна-0001", "rq id with spaces", "short"])
+def test_request_id_must_fit_an_http_header(client, body, request_id):
+    # Агент шлёт request_id соседям в X-Request-Id: кириллица в заголовке ломает все вызовы инструментов.
+    body["request_id"] = request_id
+    assert post(client, body)[0] == 422

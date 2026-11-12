@@ -11,6 +11,7 @@ from typing import Any
 
 from . import contract
 from .context import Context, to_prompt
+from .intents import find_systems
 from .llm import ChatModel, LlmError
 from .reply import HIDDEN_FRAGMENT, looks_like_instructions, response
 from .tools import Tools, ToolError
@@ -66,12 +67,18 @@ def answer_with_model(body: dict[str, Any], ctx: Context, tools: Tools, model: C
             if calls > max_tool_calls:
                 result = {"error": {"code": "rate_limited", "message": "Предел вызовов инструментов исчерпан. Ответь текстом."}}
             else:
-                result = run_tool(call, body["request_id"], tools, sources, contacts)
+                result = run_tool(call, body["request_id"], tools, sources, contacts, named_systems(body))
             messages.append({"role": "tool", "tool_call_id": call.get("id", ""), "content": json.dumps(result, ensure_ascii=False)})
 
 
+def named_systems(body: dict[str, Any]) -> set[str]:
+    """Системы, которые стажёр сам назвал в этом сообщении или в трёх последних своих сообщениях."""
+    said = [item["text"] for item in body["history"] if item["role"] == "user"][-3:] + [body["message"]]
+    return {system for text in said for system in find_systems(text.lower())}
+
+
 def run_tool(call: dict[str, Any], request_id: str, tools: Tools, sources: dict[str, Any],
-             contacts: list[dict[str, Any]]) -> dict[str, Any]:
+             contacts: list[dict[str, Any]], named: set[str] = frozenset()) -> dict[str, Any]:
     """Выполнить вызов модели и собрать из результата источники и контакты для ответа."""
     function = call.get("function") or {}
     name = function.get("name", "")
@@ -94,6 +101,8 @@ def run_tool(call: dict[str, Any], request_id: str, tools: Tools, sources: dict[
         return _error("validation", "Аргументы не подходят: " + "; ".join(problems))
 
     if name == "access_create_draft":
+        if args["system"] not in named:  # заявку оформляем только на то, что стажёр попросил сам
+            return _error("conflict", "Пользователь не называл эту систему. Спроси, к какой системе нужен доступ.")
         refusal = already_has_access(tools, args["system"])
         if refusal:
             return _error("conflict", refusal)
