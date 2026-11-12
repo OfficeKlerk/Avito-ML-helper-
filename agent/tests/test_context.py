@@ -60,6 +60,8 @@ def test_prompt_has_context_and_no_token(body):
                      "среда", "Europe/Moscow", "Просрочены:", "Следующие шаги:"):
         assert expected in prompt, expected
     assert "Bearer" not in prompt and "jwt" not in prompt.lower()
+    assert "среда 2026-11-11 (сегодня), четверг 2026-11-12" in prompt
+    assert "понедельник 2026-11-16" in prompt and "вторник 2026-11-24" in prompt  # две недели вперёд
 
 
 def test_prompt_for_user_without_team(body):
