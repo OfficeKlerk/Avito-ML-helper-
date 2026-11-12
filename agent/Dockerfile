@@ -4,6 +4,7 @@ WORKDIR /srv
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
+COPY prompts ./prompts
 # Схемы контрактов: docker build --build-context contracts=../contracts (так делают Makefile и Compose).
 COPY --from=contracts . ./contracts
 ENV CONTRACTS_DIR=/srv/contracts
