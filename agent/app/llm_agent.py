@@ -11,7 +11,7 @@ from typing import Any
 from . import contract
 from .context import Context, to_prompt
 from .llm import ChatModel, LlmError
-from .reply import response
+from .reply import HIDDEN_FRAGMENT, looks_like_instructions, response
 from .tools import Tools, ToolError
 
 PROMPTS_DIR = Path(os.environ.get("PROMPTS_DIR") or Path(__file__).resolve().parents[1] / "prompts")
@@ -93,9 +93,11 @@ def run_tool(call: dict[str, Any], request_id: str, tools: Tools, sources: dict[
     try:
         if name == "knowledge_search":
             chunks = tools.search(args["query"], args.get("top_k", 3))
-            for chunk in chunks:
+            safe = [c for c in chunks if not looks_like_instructions(c["text"])]
+            for chunk in safe:
                 sources.setdefault(chunk["source"]["chunk_id"], chunk["source"])
-            return {"results": [{"source": c["source"], "text": c["text"]} for c in chunks]}
+            return {"results": [{"source": c["source"], "text": c["text"]} for c in safe]
+                    + [{"text": HIDDEN_FRAGMENT} for c in chunks if c not in safe]}
         result = tools.mcp(name, args)
     except ToolError as exc:
         return _error(exc.code, exc.message)

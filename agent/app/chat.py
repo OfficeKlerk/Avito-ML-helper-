@@ -9,7 +9,7 @@ from .context import Context, build_context
 from .intents import Understanding, understand
 from .llm import ChatModel, LlmError
 from .llm_agent import answer_with_model
-from .reply import KIND_WORD, SYSTEM_TITLE, draft_action, period, response
+from .reply import KIND_WORD, SYSTEM_TITLE, draft_action, looks_like_instructions, period, response
 from .tools import Tools, ToolError
 
 ASK_DATE_SUGGESTIONS = ["Завтра", "В пятницу"]
@@ -20,7 +20,9 @@ CLAIMED_DRAFT = [
     re.compile(_NOUN + r"\b(?P<gap>(?:[^.!?\n]|(?<=\d)\.(?=\d)){0,60}?)\b(?:создан|подготовлен|отправлен|оформлен|согласован)\w*", re.IGNORECASE),
     re.compile(r"\b(?:созда|подготови|отправи|оформи|согласова)ла?\b(?P<gap>(?:[^.!?\n]|(?<=\d)\.(?=\d)){0,30}?)\b" + _NOUN, re.IGNORECASE),
 ]
-NOT_DONE = re.compile(r"\b(?:не|будет|будут|после|когда|чтобы|можно|могу|нужно|если|пока|ли|бы)\b", re.IGNORECASE)
+NOT_DONE = re.compile(r"\b(?:не|будет|будут|после|когда|чтобы|можно|могу|нужно|если|пока|ли|бы|уже)\b", re.IGNORECASE)
+# «Заявка уже отправлена и ждёт согласования» — правда о прежней заявке, а не о новом черновике.
+EXISTING = re.compile(r"\bждёт\b|\bждет\b|ожида\w*", re.IGNORECASE)
 NO_DRAFT_TEXT = ("Черновик заявки не создан: сервис заявок не подтвердил создание. "
                  "Попробуй ещё раз чуть позже — я помогу оформить заново.")
 
@@ -72,7 +74,9 @@ def check_model_answer(result: dict[str, Any], body: dict[str, Any], ctx: Contex
 def claims_draft(text: str) -> bool:
     for pattern in CLAIMED_DRAFT:
         for m in pattern.finditer(text):
-            if not NOT_DONE.search(text[max(0, m.start() - 30):m.start()] + " " + m["gap"]):
+            sentence_end = re.search(r"[.!?\n]", text[m.end():])
+            after = text[m.end():m.end() + (sentence_end.start() if sentence_end else len(text))]
+            if not NOT_DONE.search(text[max(0, m.start() - 30):m.start()] + " " + m["gap"]) and not EXISTING.search(after):
                 return True
     return False
 
@@ -201,7 +205,7 @@ def question(message: str, tools: Tools) -> dict[str, Any]:
         chunks = tools.search(message)
     except ToolError:
         return unknown(tools, "Поиск по базе знаний сейчас недоступен.")
-    top = list({c["source"]["chunk_id"]: c for c in chunks}.values())[:2]
+    top = list({c["source"]["chunk_id"]: c for c in chunks if not looks_like_instructions(c["text"])}.values())[:2]
     if not top:
         return unknown(tools, "В базе знаний ответа не нашёл — попробуй переформулировать вопрос.")
     parts = [f"**{c['source']['title']}" + (f" — {c['source']['section']}" if c["source"].get("section") else "")

@@ -2,7 +2,9 @@
 COMPOSE := docker compose
 SERVICES := agent knowledge-service core-api corp-mock
 
-.PHONY: help up down logs ps health stubs-up stubs-down contracts smoke test test-devkit $(addprefix test-,$(SERVICES))
+TEST_CONTEXTS := --build-context contracts=./contracts --build-context fixtures=./fixtures --build-context data=./data
+
+.PHONY: help up down logs ps health stubs-up stubs-down contracts smoke test test-devkit eval $(addprefix test-,$(SERVICES))
 
 help: ## Показать команды
 	@grep -E '^[a-zA-Z_%-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-22s %s\n", $$1, $$2}'
@@ -37,8 +39,12 @@ smoke: up stubs-up ## Сквозная проверка: /health сервисо�
 test: $(addprefix test-,$(SERVICES)) test-devkit ## Тесты всех сервисов и инструментов
 
 $(addprefix test-,$(SERVICES)): test-%: ## Тесты одного сервиса: make test-agent
-	docker build -q --target test --build-context contracts=./contracts --build-context fixtures=./fixtures -t ai-buddy-$*-test ./$* >/dev/null
+	docker build -q --target test $(TEST_CONTEXTS) -t ai-buddy-$*-test ./$* >/dev/null
 	docker run --rm ai-buddy-$*-test
+
+eval: ## Проверка качества агента: без модели и, если LLM настроена в .env, с моделью. Отчёт — agent/evals/reports/
+	docker build -q --target test $(TEST_CONTEXTS) -t ai-buddy-agent-test ./agent >/dev/null
+	docker run --rm $$( [ -f .env ] && echo --env-file .env ) -v "$(CURDIR)/agent/evals/reports:/srv/evals/reports" ai-buddy-agent-test python -m evals.run
 
 test-devkit: ## Тесты проверки контрактов и заглушек
 	docker build -q -f devkit/Dockerfile --target test -t ai-buddy-devkit-test . >/dev/null

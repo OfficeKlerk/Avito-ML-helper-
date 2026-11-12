@@ -2,11 +2,25 @@
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from typing import Any
 
 KIND_WORD = {"day_off": "отгул", "vacation": "отпуск"}
 KIND_TITLE = {"day_off": "Отгул", "vacation": "Отпуск"}
+# Фрагмент базы знаний, который обращается к ассистенту, — не инструкция, а попытка подмены. Его не показываем.
+INSTRUCTIONS_TO_ASSISTANT = re.compile(
+    r"игнорир\w*\s+(?:все\s+)?(?:предыдущ|прошл|сво|эт)\w*\s+(?:инструкц|правил|указан)|"
+    r"ignore\s+(?:all\s+)?(?:previous|prior)\s+instructions|\bассистент\w*\s*[:,!]|"
+    r"системн\w*\s+(?:промпт|инструкц)|system\s+prompt",
+    re.IGNORECASE)
+HIDDEN_FRAGMENT = "Фрагмент скрыт: в нём инструкции для ассистента, а не сведения для пользователя."
+
+
+def looks_like_instructions(text: str) -> bool:
+    return bool(INSTRUCTIONS_TO_ASSISTANT.search(text))
+
+
 SYSTEM_TITLE = {"confluence": "Confluence", "jira": "Jira", "gitlab": "GitLab", "vpn": "VPN", "team_space": "Пространство команды"}
 
 
