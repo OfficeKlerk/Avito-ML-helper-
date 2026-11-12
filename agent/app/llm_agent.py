@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import time
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,12 @@ PROMPTS_DIR = Path(os.environ.get("PROMPTS_DIR") or Path(__file__).resolve().par
 CORP_TOOLS = ("directory_find_contact", "absence_get_rules", "absence_create_draft", "access_list_my", "access_create_draft")
 
 
+@cache
+def system_prompt() -> str:
+    return (PROMPTS_DIR / "system.md").read_text(encoding="utf-8")
+
+
+@cache
 def tool_definitions() -> list[dict[str, Any]]:
     return [contract.search_definition()] + [contract.tool_definition(name) for name in CORP_TOOLS]
 
@@ -30,7 +37,7 @@ def answer_with_model(body: dict[str, Any], ctx: Context, tools: Tools, model: C
     """
     deadline = time.monotonic() + timeout
     messages: list[dict[str, Any]] = [
-        {"role": "system", "content": (PROMPTS_DIR / "system.md").read_text(encoding="utf-8")},
+        {"role": "system", "content": system_prompt()},
         {"role": "system", "content": "Контекст пользователя:\n" + to_prompt(ctx)},
         *({"role": item["role"], "content": item["text"]} for item in body["history"]),
         {"role": "user", "content": body["message"]},
