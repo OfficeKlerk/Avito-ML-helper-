@@ -38,6 +38,11 @@
 - {id: mortgage, split: dev, user: u_max, query: "Как оформить ипотеку?", relevant: []}
 - {id: foreign_release, split: dev, user: u_anna, query: "Расписание релизов Авто", relevant: [], forbidden: [kb_auto_release_process]}
 - {id: foreign_standup, split: dev, user: u_max, query: "Когда стендап Доставки?", relevant: [], forbidden: [kb_delivery_rituals]}
+# Найдены при проверке агента с YandexGPT: формы одного глагола («настроить» / «настрой») и «у нас».
+- {id: setup_verb_form, split: dev, user: u_anna, query: "Как настроить окружение?", relevant: ["kb_delivery_dev_setup#first-run", "kb_delivery_dev_setup#requirements", "kb_onboarding_first_weeks#week1"]}
+- {id: run_verb_form, split: dev, user: u_anna, query: "Как поднять проект локально?", relevant: ["kb_delivery_dev_setup#first-run"]}
+- {id: standup_us, split: dev, user: u_anna, query: "Во сколько у нас стендап?", relevant: ["kb_delivery_rituals#standup"]}
+- {id: planning_us, split: dev, user: u_anna, query: "Когда у нас планирование?", relevant: ["kb_delivery_rituals#planning"]}
 - {id: hr_team, split: dev, user: u_elena, query: "docker compose make migrate", relevant: [], forbidden: [kb_delivery_dev_setup]}
 - {id: manager_role, split: dev, user: u_olga, query: "Сложные случаи: стажёр не справляется второй месяц подряд", relevant: [], forbidden: [kb_mentor_guide]}
 - {id: empty_words, split: dev, user: u_anna, query: "как что где", relevant: []}

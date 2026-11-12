@@ -1,19 +1,19 @@
 {
-  "generated_at": "2026-11-12T15:58:37.551684+00:00",
+  "generated_at": "2026-11-12T16:25:18.526738+00:00",
   "corpus_sha256": "4a3378727f89664aeb863ddeefbaa4e237a0377cfd01b2893b8e86e77b1d1fd8",
   "evaluation_phase": "regression_after_holdout_review",
-  "search_code_sha256": "85c06302718ca4b28b9ed20f880e933c4e483cbbd13e3a006aa5e8e21972c2ec",
-  "cases_sha256": "c3a49fc7387588329f97f5335ce65a684c939f2f05b6dfdec95985ddc64a2761",
+  "search_code_sha256": "3cbbd2840ccd854e251b057209feb9706b609b67eaf8dbaa329749c84266fb97",
+  "cases_sha256": "d2c8cb81e53a9794c7e170349353c8b8514c934434038ee12a8e09c92e792174",
   "metrics": {
     "baseline": {
       "dev": {
-        "cases": 40,
-        "answerable": 32,
+        "cases": 44,
+        "answerable": 36,
         "unanswerable": 8,
-        "recall_at_1": 0.90625,
-        "recall_at_3": 1.0,
-        "recall_at_5": 1.0,
-        "mrr": 0.953125,
+        "recall_at_1": 0.8611111111111112,
+        "recall_at_3": 0.9722222222222222,
+        "recall_at_5": 0.9722222222222222,
+        "mrr": 0.9120370370370371,
         "empty_accuracy": 0.25,
         "leaks": 0
       },
@@ -29,21 +29,21 @@
         "leaks": 0
       },
       "all": {
-        "cases": 60,
-        "answerable": 46,
+        "cases": 64,
+        "answerable": 50,
         "unanswerable": 14,
-        "recall_at_1": 0.8695652173913043,
-        "recall_at_3": 0.9565217391304348,
-        "recall_at_5": 0.9565217391304348,
-        "mrr": 0.9130434782608695,
+        "recall_at_1": 0.84,
+        "recall_at_3": 0.94,
+        "recall_at_5": 0.94,
+        "mrr": 0.8866666666666667,
         "empty_accuracy": 0.35714285714285715,
         "leaks": 0
       }
     },
     "improved": {
       "dev": {
-        "cases": 40,
-        "answerable": 32,
+        "cases": 44,
+        "answerable": 36,
         "unanswerable": 8,
         "recall_at_1": 1.0,
         "recall_at_3": 1.0,
@@ -56,21 +56,21 @@
         "cases": 20,
         "answerable": 14,
         "unanswerable": 6,
-        "recall_at_1": 0.9285714285714286,
+        "recall_at_1": 1.0,
         "recall_at_3": 1.0,
         "recall_at_5": 1.0,
-        "mrr": 0.9523809523809524,
+        "mrr": 1.0,
         "empty_accuracy": 1.0,
         "leaks": 0
       },
       "all": {
-        "cases": 60,
-        "answerable": 46,
+        "cases": 64,
+        "answerable": 50,
         "unanswerable": 14,
-        "recall_at_1": 0.9782608695652174,
+        "recall_at_1": 1.0,
         "recall_at_3": 1.0,
         "recall_at_5": 1.0,
-        "mrr": 0.9855072463768116,
+        "mrr": 1.0,
         "empty_accuracy": 1.0,
         "leaks": 0
       }
@@ -443,7 +443,8 @@
       "actual": [
         "kb_absence_handover#handover",
         "kb_absence_handover#calendar",
-        "kb_absence_handover#dates"
+        "kb_absence_handover#dates",
+        "kb_absence_rules#vacation"
       ],
       "first_relevant_rank": 1,
       "correct_empty": null,
@@ -482,10 +483,10 @@
       "mode": "improved",
       "actual": [
         "kb_absence_handover#calendar",
+        "kb_absence_rules#vacation",
         "kb_absence_rules#day-off",
         "kb_absence_handover#dates",
-        "kb_absence_handover#handover",
-        "kb_absence_rules#vacation"
+        "kb_absence_handover#handover"
       ],
       "first_relevant_rank": 1,
       "correct_empty": null,
@@ -976,7 +977,9 @@
       "mode": "improved",
       "actual": [
         "kb_who_is_who_delivery#channels",
-        "kb_onboarding_first_weeks#week1"
+        "kb_who_is_who_delivery#whom",
+        "kb_onboarding_first_weeks#week1",
+        "kb_absence_rules#vacation"
       ],
       "first_relevant_rank": 1,
       "correct_empty": null,
@@ -1228,7 +1231,8 @@
         "kb_mentor_guide#feedback",
         "kb_mentor_guide#hard-cases",
         "kb_mentor_guide#week1",
-        "kb_onboarding_blockers#one-on-one"
+        "kb_onboarding_blockers#one-on-one",
+        "kb_access_statuses#approved-granted"
       ],
       "first_relevant_rank": 1,
       "correct_empty": null,
@@ -1416,6 +1420,161 @@
       "actual": [],
       "first_relevant_rank": null,
       "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "setup_verb_form",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как настроить окружение?",
+      "relevant": [
+        "kb_delivery_dev_setup#first-run",
+        "kb_delivery_dev_setup#requirements",
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_dev_setup#requirements",
+        "kb_delivery_dev_setup#troubleshooting",
+        "kb_delivery_dev_setup#first-run",
+        "kb_access_howto#request",
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "setup_verb_form",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как настроить окружение?",
+      "relevant": [
+        "kb_delivery_dev_setup#first-run",
+        "kb_delivery_dev_setup#requirements",
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "run_verb_form",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как поднять проект локально?",
+      "relevant": [
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_howto#request",
+        "kb_absence_rules#sick",
+        "kb_access_howto#rejected",
+        "kb_absence_rules#day-off",
+        "kb_access_howto#required"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "run_verb_form",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как поднять проект локально?",
+      "relevant": [
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "standup_us",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Во сколько у нас стендап?",
+      "relevant": [
+        "kb_delivery_rituals#standup"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#months",
+        "kb_access_howto#rejected",
+        "kb_delivery_rituals#standup",
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review"
+      ],
+      "first_relevant_rank": 3,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "standup_us",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Во сколько у нас стендап?",
+      "relevant": [
+        "kb_delivery_rituals#standup"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_rituals#standup",
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review",
+        "kb_delivery_rituals#one-on-one"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "planning_us",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Когда у нас планирование?",
+      "relevant": [
+        "kb_delivery_rituals#planning"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_rituals#planning",
+        "kb_access_howto#rejected",
+        "kb_delivery_rituals#code-review",
+        "kb_delivery_rituals#one-on-one",
+        "kb_access_howto#request"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "planning_us",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Когда у нас планирование?",
+      "relevant": [
+        "kb_delivery_rituals#planning"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review",
+        "kb_delivery_rituals#standup",
+        "kb_delivery_rituals#one-on-one",
+        "kb_absence_handover#calendar"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
       "leaks": []
     },
     {
@@ -1652,11 +1811,13 @@
       ],
       "mode": "improved",
       "actual": [
+        "kb_access_statuses#approved-granted",
+        "kb_access_statuses#duplicates-rejected",
+        "kb_access_statuses#draft-submitted",
         "kb_access_howto#required",
-        "kb_delivery_access#gitlab",
-        "kb_access_statuses#approved-granted"
+        "kb_delivery_access#gitlab"
       ],
-      "first_relevant_rank": 3,
+      "first_relevant_rank": 1,
       "correct_empty": null,
       "leaks": []
     },
@@ -1724,8 +1885,8 @@
       "mode": "improved",
       "actual": [
         "kb_absence_handover#handover",
-        "kb_absence_rules#vacation",
-        "kb_absence_handover#dates"
+        "kb_absence_handover#dates",
+        "kb_absence_rules#vacation"
       ],
       "first_relevant_rank": 1,
       "correct_empty": null,
@@ -1978,7 +2139,9 @@
       ],
       "mode": "improved",
       "actual": [
-        "kb_auto_access#help"
+        "kb_auto_access#help",
+        "kb_access_statuses#approved-granted",
+        "kb_access_howto#request"
       ],
       "first_relevant_rank": 1,
       "correct_empty": null,
