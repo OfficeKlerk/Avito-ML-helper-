@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from .context import Context, build_context
@@ -12,6 +13,16 @@ from .reply import KIND_WORD, draft_action, period, response
 from .tools import Tools, ToolError
 
 ASK_DATE_SUGGESTIONS = ["Завтра", "В пятницу"]
+# Утверждения о готовом черновике в двух порядках слов: «черновик … создан» и «подготовил … черновик».
+# Отрицание и будущее время («не создан», «будет отправлена», «после того как») утверждением не считаются.
+_NOUN = r"(?:черновик|заявк)\w*"
+CLAIMED_DRAFT = [
+    re.compile(_NOUN + r"\b(?P<gap>(?:[^.!?\n]|(?<=\d)\.(?=\d)){0,60}?)\b(?:создан|подготовлен|отправлен|оформлен|согласован)\w*", re.IGNORECASE),
+    re.compile(r"\b(?:созда|подготови|отправи|оформи|согласова)ла?\b(?P<gap>(?:[^.!?\n]|(?<=\d)\.(?=\d)){0,30}?)\b" + _NOUN, re.IGNORECASE),
+]
+NOT_DONE = re.compile(r"\b(?:не|будет|будут|после|когда|чтобы|можно|могу|нужно|если|пока|ли|бы)\b", re.IGNORECASE)
+NO_DRAFT_TEXT = ("Черновик заявки не создан: сервис заявок не подтвердил создание. "
+                 "Попробуй ещё раз чуть позже — я помогу оформить заново.")
 
 
 def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
@@ -28,6 +39,8 @@ def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
     fell_back = result is None and model is not None
     if result is None:
         result = answer_by_rules(body, ctx, tools)
+    elif not tools.drafts:
+        result = check_model_answer(result, body, ctx)
     # Черновики, созданные в этом запросе, всегда видны пользователю — даже если модель упала после создания.
     shown = {action["external_id"] for action in result["proposed_actions"]}
     missed = [draft_action(d) for d in tools.drafts.values() if d["id"] not in shown]
@@ -40,6 +53,25 @@ def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
     if any(step["error_code"] == "unavailable" for step in tools.trace):
         result["status"] = "degraded"
     return result
+
+
+def check_model_answer(result: dict[str, Any], body: dict[str, Any], ctx: Context) -> dict[str, Any]:
+    """Ответ модели, если черновик не создан: текст не утверждает обратного, а уточнение даты переживёт сбой модели."""
+    if claims_draft(result["text"]):
+        result["text"] = NO_DRAFT_TEXT
+    nlu = understand(body["message"], ctx.today, body["state"])
+    if nlu.intent == "absence" and nlu.date_from is None:
+        result["state"] = {"intent": "absence_request", "kind": nlu.kind}
+        result["missing_fields"] = ["date_from", "date_to"]
+    return result
+
+
+def claims_draft(text: str) -> bool:
+    for pattern in CLAIMED_DRAFT:
+        for m in pattern.finditer(text):
+            if not NOT_DONE.search(text[max(0, m.start() - 30):m.start()] + " " + m["gap"]):
+                return True
+    return False
 
 
 def answer_by_rules(body: dict[str, Any], ctx: Context, tools: Tools) -> dict[str, Any]:

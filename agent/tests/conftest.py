@@ -23,6 +23,7 @@ def default_responses() -> dict:
         "knowledge_search": fixture_case("e_knowledge/search")["response"]["body"]["results"],
         "absence_create_draft": fixture_case("c_mcp_tools/absence_create_draft")["response"]["body"],
         "directory_find_contact": fixture_case("c_mcp_tools/directory_find_contact")["response"]["body"],
+        "absence_get_rules": fixture_case("c_mcp_tools/absence_get_rules")["response"]["body"],
     }
 
 
