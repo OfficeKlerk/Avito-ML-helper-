@@ -8,7 +8,7 @@ def test_quality_gate_and_reproducible_reports(tmp_path, monkeypatch):
     assert main() == 0
     report = json.loads((tmp_path / "latest.json").read_text())
     assert meets_targets(report)
-    assert report["metrics"]["improved"]["dev"]["cases"] == 40
+    assert report["metrics"]["improved"]["dev"]["cases"] == 44
     assert report["metrics"]["improved"]["holdout"]["cases"] == 20
     assert report["metrics"]["improved"]["all"]["leaks"] == 0
     assert len(report["corpus_sha256"]) == 64 and len(report["cases_sha256"]) == 64

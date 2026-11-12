@@ -15,6 +15,11 @@ from .models import Chunk
 
 K1, B = 1.5, 0.75
 MIN_COVERAGE = 0.6
+# Snowball по-разному режет формы одного глагола: «настроить» → настро, «настрой» → настр,
+# «поднять» → подня, «подними» → подн. Основы, которые отличаются одной буквой на конце, считаем одним словом.
+# Две буквы уже опасно: «стендап» → стендап и «стенды» → стенд — разные слова.
+MIN_FORM_LENGTH = 4
+NEAR_FORM_WEIGHT = 0.9
 TOKENS = re.compile(r"[a-zа-я0-9]+")
 THREAD = threading.local()
 STOPWORDS = frozenset("""а без бы был была были было быть в вам вас ваш ваша ваши во вот все всего всем вы
@@ -80,22 +85,40 @@ class SearchIndex:
         self.average_length = sum(lengths) / len(lengths) if lengths else 1.0
         self.idf = {word: math.log1p((len(chunks) - count + 0.5) / (count + 0.5)) for word, count in df.items()}
 
+    def forms(self, term: str) -> dict[str, float]:
+        """Основы из словаря, которые считаем тем же словом, с весом: точное совпадение — 1."""
+        found = {term: 1.0} if term in self.idf else {}
+        if self.enhanced and len(term) >= MIN_FORM_LENGTH:
+            for word in self.idf:
+                shorter, longer = sorted((term, word), key=len)
+                if len(longer) == len(shorter) + 1 and len(shorter) >= MIN_FORM_LENGTH and longer.startswith(shorter):
+                    found.setdefault(word, NEAR_FORM_WEIGHT)
+        return found
+
     def search(self, query: str, top_k: int = 5) -> list[dict]:
         query, top_k = validate_request({"query": query, "top_k": top_k})
         terms = frozenset(tokenize(query, enhanced=self.enhanced))
         if not terms:
             return []
+        forms = {term: self.forms(term) for term in terms}
         scored = []
         for chunk, counts, length, heading in zip(self.chunks, self.frequencies, self.lengths, self.heading_terms):
-            matched = terms.intersection(counts)
-            coverage = len(matched) / len(terms)
-            if not matched or (self.enhanced and coverage < MIN_COVERAGE):
-                continue
             norm = K1 * (1 - B + B * length / self.average_length)
-            score = sum(self.idf[t] * counts[t] * (K1 + 1) / (counts[t] + norm) for t in sorted(matched))
+            # Для каждого слова запроса — лучшая из его форм в этом фрагменте.
+            best = {}
+            for term in sorted(terms):
+                options = [weight * self.idf[w] * counts[w] * (K1 + 1) / (counts[w] + norm)
+                           for w, weight in forms[term].items() if w in counts]
+                if options:
+                    best[term] = max(options)
+            coverage = len(best) / len(terms)
+            if not best or (self.enhanced and coverage < MIN_COVERAGE):
+                continue
+            score = sum(best[t] for t in sorted(best))
             if self.enhanced:
                 # Prefer a section explicitly about the query, not just a shared document tag.
-                score *= coverage * (1 + len(terms.intersection(heading)) / len(terms))
+                in_heading = sum(1 for t in terms if heading.intersection(forms[t]))
+                score *= coverage * (1 + in_heading / len(terms))
             scored.append((score, chunk))
         scored.sort(key=lambda item: (-item[0], item[1].chunk_id))
         return [chunk.to_result(score) for score, chunk in scored[:top_k]]

@@ -118,3 +118,22 @@ def test_pronouns_do_not_block_a_one_word_question():
     from app.search import tokenize
     assert tokenize("Во сколько у нас стендап?") == tokenize("стендап")
     assert tokenize("Что нам делать с доступами?") == tokenize("доступами")
+
+
+@pytest.mark.parametrize("query, expected", [
+    ("Как настроить окружение?", {"kb_onboarding_first_weeks#week1", "kb_delivery_dev_setup#first-run"}),  # настро / настр
+    ("Как поднять проект локально?", {"kb_delivery_dev_setup#first-run"}),  # подня / подн
+])
+def test_verb_forms_one_letter_apart_match(token, query, expected):
+    view = KnowledgeBase.load(DATA / "kb").authorize("Bearer " + token(), jwt_secret=SECRET)
+    found = [r["source"]["chunk_id"] for r in view.search(query, 3)]
+    assert found and found[0] in expected
+
+
+def test_near_forms_are_one_letter_apart_and_weigh_less():
+    chunks = tuple(c for d in load_documents(DATA / "kb") for c in chunk_document(d))
+    index = SearchIndex(chunks)
+    assert index.forms("настро").get("настр") == 0.9  # «настроить» находит «Настрой», но весит меньше точного
+    assert "стенд" not in index.forms("стендап")  # «стенды» на тестовых стендах — не «стендап»
+    assert index.forms("кот") == ({"кот": 1.0} if "кот" in index.idf else {})  # короткие основы не расширяем
+    assert SearchIndex(chunks, enhanced=False).forms("настро") == ({"настро": 1.0} if "настро" in index.idf else {})
