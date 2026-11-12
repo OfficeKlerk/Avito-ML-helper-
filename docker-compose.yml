@@ -72,7 +72,10 @@ services:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8060/health')"]
 
   agent:
-    build: { context: ./agent, target: runtime }
+    build:
+      context: ./agent
+      target: runtime
+      additional_contexts: { contracts: ./contracts }
     environment:
       PORT: "8090"
       KNOWLEDGE_URL: http://knowledge-service:8060

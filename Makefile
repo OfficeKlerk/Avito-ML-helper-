@@ -37,7 +37,7 @@ smoke: up stubs-up ## Сквозная проверка: /health сервисо�
 test: $(addprefix test-,$(SERVICES)) test-devkit ## Тесты всех сервисов и инструментов
 
 $(addprefix test-,$(SERVICES)): test-%: ## Тесты одного сервиса: make test-agent
-	docker build -q --target test -t ai-buddy-$*-test ./$* >/dev/null
+	docker build -q --target test --build-context contracts=./contracts --build-context fixtures=./fixtures -t ai-buddy-$*-test ./$* >/dev/null
 	docker run --rm ai-buddy-$*-test
 
 test-devkit: ## Тесты проверки контрактов и заглушек

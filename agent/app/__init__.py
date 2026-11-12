@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from werkzeug.exceptions import HTTPException
+
+from . import contract
+from .chat import answer
+from .context import InvalidRequest
 
 SERVICE = "agent"
 VERSION = "0.1.0"
@@ -44,6 +48,22 @@ def create_app() -> Flask:
     @app.get("/health")
     def health():
         return jsonify({"status": "ok", "service": SERVICE, "version": VERSION})
+
+    @app.post("/v1/chat")
+    def chat():
+        # Токен не проверяем и не читаем: его подписал core-api, агент лишь пересылает его соседям (A4).
+        token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+        if not request.headers.get("Authorization", "").startswith("Bearer ") or not token:
+            return error_response(401)
+        body = request.get_json(silent=True)
+        problems = ["тело запроса не JSON"] if body is None else contract.errors(body, "ChatRequest")
+        if problems:
+            app.logger.info("запрос не по контракту B: %s", "; ".join(problems))
+            return error_response(422)
+        try:
+            return jsonify(answer(body))
+        except InvalidRequest as exc:
+            return error_response(422, str(exc))
 
     @app.errorhandler(HTTPException)
     def http_error(exc: HTTPException):
