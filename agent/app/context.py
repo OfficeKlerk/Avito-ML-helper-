@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -71,6 +71,10 @@ def to_prompt(ctx: Context) -> str:
         f"Неделя стажировки: {ctx.week or 'нет'}. Прогресс адаптации: {ctx.progress}%.",
         f"Наставник: {ctx.mentor or 'нет'}. Руководитель: {ctx.manager or 'нет'}.",
         f"Сейчас: {ctx.now:%Y-%m-%d %H:%M}, {WEEKDAYS[ctx.today.weekday()]}, часовой пояс {ctx.timezone}.",
+        # Модели плохо считают дни недели сами: «в понедельник» без календаря превращается в неверную дату.
+        "Календарь: " + ", ".join(
+            f"{WEEKDAYS[d.weekday()]} {d:%Y-%m-%d}" + (" (сегодня)" if d == ctx.today else "")
+            for d in (ctx.today + timedelta(days=i) for i in range(14))) + ".",
     ]
     if ctx.overdue:
         lines.append("Просрочены: " + "; ".join(f"{t['title']} (срок {t['due_date']})" for t in ctx.overdue) + ".")
