@@ -4,7 +4,7 @@ SERVICES := agent knowledge-service core-api corp-mock
 
 TEST_CONTEXTS := --build-context contracts=./contracts --build-context fixtures=./fixtures --build-context data=./data
 
-.PHONY: help up down logs ps health stubs-up stubs-down contracts smoke test test-devkit eval $(addprefix test-,$(SERVICES))
+.PHONY: help up down logs ps health stubs-up stubs-down contracts smoke test test-devkit eval eval-knowledge test-knowledge-agent $(addprefix test-,$(SERVICES))
 
 help: ## Показать команды
 	@grep -E '^[a-zA-Z_%-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-22s %s\n", $$1, $$2}'
@@ -36,7 +36,7 @@ contracts: ## Проверить контракты, примеры и тест�
 smoke: up stubs-up ## Сквозная проверка: /health сервисов и все примеры контрактов через заглушки
 	$(COMPOSE) --profile tools run --rm --no-deps devkit python -m devkit.smoke
 
-test: $(addprefix test-,$(SERVICES)) test-devkit ## Тесты всех сервисов и инструментов
+test: $(addprefix test-,$(SERVICES)) test-devkit test-knowledge-agent ## Тесты всех сервисов и инструментов
 
 $(addprefix test-,$(SERVICES)): test-%: ## Тесты одного сервиса: make test-agent
 	docker build -q --target test $(TEST_CONTEXTS) -t ai-buddy-$*-test ./$* >/dev/null
@@ -49,3 +49,11 @@ eval: ## Проверка качества агента: без модели и,
 test-devkit: ## Тесты проверки контрактов и заглушек
 	docker build -q -f devkit/Dockerfile --target test -t ai-buddy-devkit-test . >/dev/null
 	docker run --rm ai-buddy-devkit-test
+
+eval-knowledge: ## Качество поиска: BM25 baseline и улучшенный поиск, dev и holdout
+	docker build -q --target test $(TEST_CONTEXTS) -t ai-buddy-knowledge-service-test ./knowledge-service >/dev/null
+	docker run --rm -v "$(CURDIR)/knowledge-service/evals/reports:/srv/evals/reports" ai-buddy-knowledge-service-test python -m evals.run --check
+
+test-knowledge-agent: ## Настоящие agent и knowledge-service по HTTP, без LLM и заглушки поиска
+	docker build -q -f integration/Dockerfile --build-context agent=./agent --build-context knowledge=./knowledge-service -t ai-buddy-knowledge-agent-test . >/dev/null
+	docker run --rm ai-buddy-knowledge-agent-test
