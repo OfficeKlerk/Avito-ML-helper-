@@ -196,3 +196,23 @@ def test_answer_sets_time_budget(tools):
     before = clock.monotonic()
     ask(tools, "Что мне делать дальше?")
     assert before + 20 < tools.deadline <= clock.monotonic() + 25
+
+
+def test_model_cannot_request_access_the_user_did_not_name(tools):
+    model = ScriptedModel(call(("access_create_draft", {"system": "gitlab", "reason": "Для работы"}),
+                               ("access_create_draft", {"system": "team_space", "reason": "Для работы"})),
+                          say("К какой системе нужен доступ?"))
+    result = ask(tools, "Хочу получить доступ", model=model)
+    assert drafts(tools) == [] and result["proposed_actions"] == []
+    assert result["state"] == {"intent": "access_request"}
+    replies = [json.loads(m["content"]) for m in model.requests[1][0] if m["role"] == "tool"]
+    assert {r["error"]["code"] for r in replies} == {"conflict"}
+
+
+def test_system_named_earlier_in_the_dialog_counts(tools):
+    body = copy.deepcopy(BASE)
+    body.update(message="Для работы с репозиториями", state=None,
+                history=[{"role": "user", "text": "Мне нужен гитлаб"}, {"role": "assistant", "text": "Зачем он нужен?"}])
+    model = ScriptedModel(call(("access_create_draft", {"system": "gitlab", "reason": "Репозитории"})), say("Черновик готов."))
+    result = answer(body, tools, model)
+    assert [d["system"] for d in drafts(tools)] == ["gitlab"] and len(result["proposed_actions"]) == 1
