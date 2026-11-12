@@ -65,7 +65,10 @@ def tool_results(model, round_index):
 
 def test_tool_definitions_come_from_contracts():
     definitions = {d["function"]["name"]: d["function"] for d in tool_definitions()}
-    assert set(definitions) == {"knowledge_search", "directory_find_contact", "absence_get_rules", "absence_create_draft"}
+    assert set(definitions) == {"knowledge_search", "directory_find_contact", "absence_get_rules", "absence_create_draft",
+                                "access_list_my", "access_create_draft"}
+    access = definitions["access_create_draft"]["parameters"]
+    assert access["required"] == ["system", "reason"] and "idempotency_key" not in access["properties"]
     draft = definitions["absence_create_draft"]["parameters"]
     assert "idempotency_key" not in draft["properties"] and draft["required"] == ["kind", "date_from", "date_to"]
     assert draft["properties"]["kind"]["enum"] == ["day_off", "vacation"]
@@ -81,7 +84,7 @@ def test_plain_answer(body, tools):
     messages, offered = model.requests[0]
     assert messages[0]["role"] == "system" and "AI-buddy" in messages[0]["content"]
     assert "Анна Соколова" in messages[1]["content"] and messages[-1] == {"role": "user", "content": body["message"]}
-    assert len(offered) == 4
+    assert len(offered) == 6
 
 
 def test_token_never_reaches_the_model(body, tools):
@@ -185,7 +188,7 @@ def test_draft_survives_when_rules_do_not_understand(body, tools):
     result = run(body, tools, model)
     assert [a["external_id"] for a in result["proposed_actions"]] == ["req_anna_dayoff_1"]
     assert result["text"].endswith("в карточке. Проверь его и подтверди.")
-    assert [name for name, _ in tools.calls] == ["absence_create_draft", "directory_find_contact"]
+    assert [name for name, _ in tools.calls] == ["absence_create_draft", "knowledge_search"]
 
 
 def test_http_with_model(body):

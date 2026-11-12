@@ -9,7 +9,7 @@ from .context import Context, build_context
 from .intents import Understanding, understand
 from .llm import ChatModel, LlmError
 from .llm_agent import answer_with_model
-from .reply import KIND_WORD, draft_action, period, response
+from .reply import KIND_WORD, SYSTEM_TITLE, draft_action, period, response
 from .tools import Tools, ToolError
 
 ASK_DATE_SUGGESTIONS = ["Завтра", "В пятницу"]
@@ -43,7 +43,7 @@ def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
         result = check_model_answer(result, body, ctx)
     # Черновики, созданные в этом запросе, всегда видны пользователю — даже если модель упала после создания.
     shown = {action["external_id"] for action in result["proposed_actions"]}
-    missed = [draft_action(d) for d in tools.drafts.values() if d["id"] not in shown]
+    missed = [draft_action(d) for d in {d["id"]: d for d in tools.drafts.values()}.values() if d["id"] not in shown]
     if missed:
         result["proposed_actions"] += missed
         if fell_back:
@@ -63,6 +63,9 @@ def check_model_answer(result: dict[str, Any], body: dict[str, Any], ctx: Contex
     if nlu.intent == "absence" and nlu.date_from is None:
         result["state"] = {"intent": "absence_request", "kind": nlu.kind}
         result["missing_fields"] = ["date_from", "date_to"]
+    elif nlu.intent == "access" and nlu.wants and not nlu.systems:
+        result["state"] = {"intent": "access_request"}
+        result["missing_fields"] = ["system"]
     return result
 
 
@@ -80,7 +83,9 @@ def answer_by_rules(body: dict[str, Any], ctx: Context, tools: Tools) -> dict[st
         return next_steps(ctx)
     if nlu.intent == "absence":
         return absence(ctx, nlu, tools, body["request_id"])
-    return unknown(tools)
+    if nlu.intent == "access":
+        return access(ctx, nlu, tools, body["request_id"])
+    return question(body["message"], tools)
 
 
 def next_steps(ctx: Context) -> dict[str, Any]:
@@ -129,8 +134,90 @@ def absence(ctx: Context, nlu: Understanding, tools: Tools, request_id: str) -> 
     )
 
 
-def unknown(tools: Tools) -> dict[str, Any]:
-    text = "Пока я умею подсказать следующие шаги адаптации и помочь оформить отгул или отпуск."
+def access(ctx: Context, nlu: Understanding, tools: Tools, request_id: str) -> dict[str, Any]:
+    """Доступы (A7): какие есть, каких не хватает, черновики заявок на названные системы."""
+    sources = find_sources(tools, "как запросить доступы")
+    try:
+        items = {a["system"]: a for a in tools.mcp("access_list_my")["accesses"]}
+    except ToolError as exc:
+        if not (nlu.wants and nlu.systems):
+            return response(f"Не получилось узнать твои доступы: {exc.message}", sources=sources)
+        items = {}  # список не получили, но заявку на названную систему всё равно попробуем оформить
+    if nlu.wants and nlu.systems:
+        return request_access(ctx, nlu.systems, items, tools, request_id, sources)
+    missing = [a for a in items.values() if a["required"] and a["status"] == "missing"]
+    suggestions = [f"Запроси доступ к {a['title']}" for a in missing]
+    if nlu.wants and missing:
+        return response(f"Не хватает доступов: {titles(missing)}. Какой запросить?", sources=sources,
+                        state={"intent": "access_request"}, missing_fields=["system"], suggestions=suggestions)
+    return response(overview(items), sources=sources, suggestions=suggestions)
+
+
+def overview(items: dict[str, dict[str, Any]]) -> str:
+    groups = [("Есть", "granted"), ("Запрошены и ждут согласования", "pending"), ("Не хватает", "missing")]
+    lines = [f"{label}: {titles(a for a in items.values() if a['status'] == status)}."
+             for label, status in groups if any(a["status"] == status for a in items.values())]
+    if not lines:
+        return "Обязательных доступов для твоей команды нет."
+    if not any(a["status"] == "missing" and a["required"] for a in items.values()):
+        lines.append("Все обязательные доступы у тебя есть или уже запрошены.")
+    return "\n".join(lines)
+
+
+def titles(items: Any) -> str:
+    return ", ".join(a["title"] for a in items)
+
+
+def request_access(ctx: Context, systems: tuple[str, ...], items: dict[str, dict[str, Any]], tools: Tools,
+                   request_id: str, sources: list[dict[str, Any]]) -> dict[str, Any]:
+    reason = f"Нужен для работы в команде «{ctx.team_name}»" if ctx.team_name else "Нужен для работы"
+    created, notes = [], []
+    for system in systems:
+        name, status = SYSTEM_TITLE[system], (items.get(system) or {}).get("status")
+        if status == "granted":
+            notes.append(f"Доступ к {name} у тебя уже есть.")
+            continue
+        if status == "pending":
+            notes.append(f"Заявка на доступ к {name} уже отправлена и ждёт согласования.")
+            continue
+        try:
+            created.append(draft_action(tools.mcp("access_create_draft", {
+                "system": system, "reason": reason, "idempotency_key": f"{request_id}:access_create_draft:{system}"})))
+        except ToolError as exc:
+            notes.append(f"Черновик заявки на доступ к {name} создать не получилось — сервис доступов недоступен."
+                         if exc.code == "unavailable" else exc.message)
+    parts = []
+    if created:
+        drafts = "черновики заявок" if len(created) > 1 else "черновик заявки"
+        parts.append(f"Я подготовил {drafts}: {', '.join(c['fields']['Система'] for c in created)}. Проверь и подтверди — "
+                     f"только тогда заявка уйдёт на согласование ({created[0]['fields']['Согласует']}).")
+    return response(" ".join(parts + notes), sources=sources, proposed_actions=created,
+                    suggestions=["Что ещё сделать на этой неделе?"])
+
+
+def question(message: str, tools: Tools) -> dict[str, Any]:
+    """Вопрос по базе знаний (A7): ответ — текст найденных фрагментов, источники — они же."""
+    try:
+        chunks = tools.search(message)
+    except ToolError:
+        return unknown(tools, "Поиск по базе знаний сейчас недоступен.")
+    top = list({c["source"]["chunk_id"]: c for c in chunks}.values())[:2]
+    if not top:
+        return unknown(tools, "В базе знаний ответа не нашёл — попробуй переформулировать вопрос.")
+    parts = [f"**{c['source']['title']}" + (f" — {c['source']['section']}" if c["source"].get("section") else "")
+             + f"**\n{shorten(c['text'])}" for c in top]
+    note = f"\n\n_{top[0]['disclaimer']}_" if top[0].get("disclaimer") else ""
+    return response("Вот что нашёл в базе знаний:\n\n" + "\n\n".join(parts) + note,
+                    sources=[c["source"] for c in top], suggestions=["Что мне делать дальше?"])
+
+
+def shorten(text: str, limit: int = 700) -> str:
+    return text if len(text) <= limit else text[:limit].rsplit(" ", 1)[0] + "…"
+
+
+def unknown(tools: Tools, lead: str = "") -> dict[str, Any]:
+    text = (lead + " " if lead else "") + "Я умею подсказать следующие шаги адаптации, ответить по базе знаний, " \
+        "проверить доступы и помочь оформить отгул или отпуск."
     contact = None
     try:
         contacts = tools.mcp("directory_find_contact", {"topic": "onboarding"})["contacts"]

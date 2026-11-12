@@ -1,4 +1,4 @@
-"""Распознавание запросов без LLM (задача A3): «что делать дальше» и отгул или отпуск с датами."""
+"""Распознавание запросов без LLM: «что делать дальше», отгул или отпуск с датами (A3), доступы (A7)."""
 
 from __future__ import annotations
 
@@ -16,14 +16,27 @@ MONTHS = {"янв": 1, "фев": 2, "мар": 3, "апр": 4, "мая": 5, "ма
 WEEKDAYS = ("понедельник", "вторник", "сред[ау]", "четверг", "пятниц[аеуы]", "суббот[аеуы]", "воскресень[ея]")
 RELATIVE = {"сегодня": 0, "послезавтра": 2, "завтра": 1}
 
+# Системы из контракта C (AccessSystem) и как их называют в переписке.
+SYSTEMS = {
+    "confluence": r"confluence|конфлюенс\w*|вики",
+    "jira": r"jira|джир\w*",
+    "gitlab": r"gitlab|гитлаб\w*|гит[ае]?|репозитор\w*",
+    "vpn": r"vpn|впн",
+    "team_space": r"пространств\w*",
+}
+ACCESS = re.compile(r"доступ")
+WANTS = re.compile(r"запрос|оформ|получ|выда|дай|нуж[еенао]|хочу|подай|заявк|открой|сделай")
+
 
 @dataclass(frozen=True)
 class Understanding:
-    intent: str  # next_steps | absence | unknown
+    intent: str  # next_steps | absence | access | unknown (вопрос по базе знаний)
     kind: str | None = None  # day_off | vacation
     date_from: date | None = None
     date_to: date | None = None
     past: bool = False  # названная дата уже прошла
+    systems: tuple[str, ...] = ()  # названные системы доступа, в порядке упоминания
+    wants: bool = False  # просит оформить доступ, а не только узнать
 
 
 def understand(message: str, today: date, state: dict[str, Any] | None) -> Understanding:
@@ -38,9 +51,21 @@ def understand(message: str, today: date, state: dict[str, Any] | None) -> Under
         if start < today:
             return Understanding("absence", kind, past=True)
         return Understanding("absence", kind, start, end)
+    systems = find_systems(text)
+    if (state or {}).get("intent") == "access_request" and systems:
+        return Understanding("access", systems=systems, wants=True)
+    wants = bool(WANTS.search(text))
+    # «Как работает VPN?» — вопрос по базе знаний; «нужен VPN» и «доступы» — про доступ.
+    if ACCESS.search(text) or (systems and wants):
+        return Understanding("access", systems=systems, wants=wants)
     if NEXT_STEPS.search(text):
         return Understanding("next_steps")
     return Understanding("unknown")
+
+
+def find_systems(text: str) -> tuple[str, ...]:
+    found = sorted((m.start(), system) for system, p in SYSTEMS.items() for m in re.finditer(rf"\b(?:{p})\b", text))
+    return tuple(dict.fromkeys(system for _, system in found))
 
 
 def find_dates(text: str, today: date) -> list[date]:
