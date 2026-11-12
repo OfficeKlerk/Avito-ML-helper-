@@ -4,12 +4,17 @@ WORKDIR /srv
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
+# Схемы контрактов: docker build --build-context contracts=../contracts (так делают Makefile и Compose).
+COPY --from=contracts . ./contracts
+ENV CONTRACTS_DIR=/srv/contracts
 
 # Тесты: docker build --target test -t <имя> . && docker run --rm <имя>
 FROM base AS test
 COPY requirements-dev.txt pyproject.toml ./
 RUN pip install --no-cache-dir -r requirements-dev.txt
 COPY tests ./tests
+COPY --from=fixtures . ./fixtures
+ENV FIXTURES_DIR=/srv/fixtures
 CMD ["python", "-m", "pytest", "-p", "no:cacheprovider"]
 
 FROM base AS runtime
