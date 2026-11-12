@@ -195,3 +195,71 @@ def test_http_with_model(body):
     data = response.get_json()
     assert response.status_code == 200 and contract.errors(data, "ChatResponse") == []
     assert data["text"] == "Черновик готов." and data["proposed_actions"][0]["external_id"] == "req_anna_dayoff_1"
+
+
+# ---------------------------------------------------------------- честность текста и диалог при сбое модели
+
+@pytest.mark.parametrize("text, claims", [
+    ("Черновик заявки на отгул в пятницу, 13 ноября, создан.", True),
+    ("Я подготовил черновик заявки: отгул на 13.11.2026.", True),
+    ("Я создала заявку на отгул.", True),
+    ("Заявка отправлена на согласование.", True),
+    ("Твоя заявка согласована руководителем!", True),
+    ("Готово! Черновик заявки оформлен, проверь карточку.", True),
+    ("Заявка будет отправлена на согласование только после того, как ты подтвердишь её.", False),
+    ("Черновик не создан: сервис недоступен.", False),
+    ("Я не создал черновик: сервис недоступен.", False),
+    ("Чтобы создать заявку, назови дату.", False),
+    ("Заявку нужно подать не позже чем за один рабочий день.", False),
+    ("Я могу подготовить черновик заявки, если назовёшь дату.", False),
+    ("Создай заявку в сервисе отсутствий.", False),
+    ("Дождись согласования заявки руководителем.", False),
+    ("Когда заявка будет согласована, отметь отсутствие в календаре.", False),
+    ("Если черновик заявки уже создан, проверь его в карточке.", False),
+    ("Проверь, создана ли заявка, в истории действий.", False),
+])
+def test_claims_draft(text, claims):
+    from app.chat import claims_draft
+    assert claims_draft(text) is claims
+
+
+def test_false_claim_without_draft_is_replaced(body, tools):
+    tools.responses["absence_create_draft"] = ToolError("unavailable", "Сервис временно недоступен.")
+    model = ScriptedModel(call(("absence_create_draft", DRAFT_ARGS)), say("Готово! Черновик заявки на 13.11 создан."))
+    result = run(body, tools, model)
+    assert result["text"].startswith("Черновик заявки не создан") and result["proposed_actions"] == []
+    assert result["status"] == "degraded"
+
+
+def test_made_up_claim_without_any_call_is_replaced(body, tools):
+    model = ScriptedModel(say("Я подготовил черновик заявки на пятницу, подтверди его."))
+    assert run(body, tools, model)["text"].startswith("Черновик заявки не создан")
+
+
+def test_true_claim_with_draft_is_kept(body, tools):
+    model = ScriptedModel(call(("absence_create_draft", DRAFT_ARGS)), say("Черновик заявки создан, подтверди его в карточке."))
+    assert run(body, tools, model)["text"] == "Черновик заявки создан, подтверди его в карточке."
+
+
+def test_model_asking_for_date_keeps_dialog_state(body, tools):
+    body["message"] = "Хочу взять отпуск"
+    model = ScriptedModel(say("На какие даты оформить отпуск?"))
+    result = run(body, tools, model)
+    assert result["text"] == "На какие даты оформить отпуск?"
+    assert result["state"] == {"intent": "absence_request", "kind": "vacation"}
+    assert result["missing_fields"] == ["date_from", "date_to"]
+
+
+def test_model_answer_without_absence_has_no_state(body, tools):
+    result = run(body, tools, ScriptedModel(say("Сначала попроси добавить тебя в каналы.")))
+    assert result["state"] is None and result["missing_fields"] == []
+
+
+def test_dialog_continues_when_model_fails_on_the_date(body, tools):
+    body["message"] = "Как оформить отгул?"
+    first = run(body, tools, ScriptedModel(say("На какую дату нужен отгул?")))
+    body.update(message="в пятницу", state=first["state"],
+                history=[{"role": "user", "text": "Как оформить отгул?"}, {"role": "assistant", "text": first["text"]}])
+    second = run(body, FakeTools(default_responses()), ScriptedModel(LlmError("упала")))
+    assert second["status"] == "degraded"
+    assert second["proposed_actions"][0]["fields"]["Даты"] == "13.11.2026"
