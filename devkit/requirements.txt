@@ -1,0 +1,9 @@
+# Проверка контрактов, заглушки и сквозная проверка (см. devkit/README.md)
+jsonschema==4.26.0
+referencing==0.37.0
+rfc3339-validator==0.1.4
+PyYAML==6.0.3
+mcp==2.3.0
+starlette==1.10.0
+uvicorn==0.54.0
+httpx==0.28.1

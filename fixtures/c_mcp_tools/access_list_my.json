@@ -1,0 +1,80 @@
+{
+  "contract": "C",
+  "operation": "access_list_my",
+  "tool": "access_list_my",
+  "request_schema": "c_mcp_tools.yaml#/components/schemas/EmptyInput",
+  "cases": [
+    {
+      "name": "anna",
+      "kind": "success",
+      "description": "Два доступа есть, заявка на Jira ждёт согласования, двух не хватает.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {}
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "accesses": [
+            {
+              "system": "confluence",
+              "title": "Confluence",
+              "required": true,
+              "status": "granted",
+              "request_id": null
+            },
+            {
+              "system": "jira",
+              "title": "Jira",
+              "required": true,
+              "status": "pending",
+              "request_id": "req_anna_jira_1"
+            },
+            {
+              "system": "gitlab",
+              "title": "GitLab",
+              "required": true,
+              "status": "missing",
+              "request_id": null
+            },
+            {
+              "system": "vpn",
+              "title": "VPN",
+              "required": true,
+              "status": "granted",
+              "request_id": null
+            },
+            {
+              "system": "team_space",
+              "title": "Пространство команды",
+              "required": true,
+              "status": "missing",
+              "request_id": null
+            }
+          ]
+        }
+      },
+      "response_schema": "c_mcp_tools.yaml#/components/schemas/AccessList"
+    },
+    {
+      "name": "no_team",
+      "kind": "empty",
+      "description": "У пользователя без команды нет обязательных доступов.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_elena>"
+        },
+        "arguments": {}
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "accesses": []
+        }
+      },
+      "response_schema": "c_mcp_tools.yaml#/components/schemas/AccessList"
+    }
+  ]
+}

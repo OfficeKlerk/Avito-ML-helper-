@@ -1,0 +1,16 @@
+{
+  "u_anna": {
+    "t_meet_team": "done",
+    "t_join_channels": "in_progress"
+  },
+  "u_max": {
+    "t_meet_team": "done",
+    "t_join_channels": "done",
+    "t_request_accesses": "done",
+    "t_team_space": "done",
+    "t_setup_env": "done",
+    "t_mentor_notes": "done",
+    "t_read_team_docs": "done",
+    "t_first_task": "in_progress"
+  }
+}

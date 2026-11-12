@@ -1,0 +1,251 @@
+openapi: 3.1.0
+info:
+  title: "Контракт B: core-api ↔ agent"
+  version: 0.1.0
+  description: >
+    core-api передаёт агенту проверенный контекст пользователя, историю и сообщение.
+    Агент ничего не хранит: историю и состояние диалога держит core-api.
+
+    Заголовки запроса:
+    `Authorization: Bearer <JWT пользователя>` — агент пересылает его в knowledge-service и corp-mock
+    и НЕ добавляет в промпт LLM; `X-Request-Id` — сквозной идентификатор запроса.
+
+    Права берутся только из поля `user` и токена. Текст сообщения и вывод LLM роль или команду не меняют.
+servers:
+  - url: http://localhost:8090
+security:
+  - bearer: []
+paths:
+  /health:
+    get:
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: Сервис работает
+          content:
+            application/json:
+              schema: { $ref: "common.yaml#/components/schemas/Health" }
+
+  /v1/chat:
+    post:
+      operationId: chat
+      summary: Обработать сообщение пользователя
+      description: >
+        Если LLM или инструмент недоступны, агент возвращает 200 со `status: degraded` и полезным
+        ответом без них. При ошибке инструмента агент не сообщает об успешном действии.
+        5xx — только когда ответ сформировать невозможно совсем.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatRequest" }
+      responses:
+        "200":
+          description: Ответ агента
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatResponse" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Ошибка в едином формате
+      content:
+        application/json:
+          schema: { $ref: "common.yaml#/components/schemas/ErrorResponse" }
+  schemas:
+    UserContext:
+      description: Проверенный контекст пользователя. Заполняет core-api из авторизации.
+      type: object
+      required: [id, name, role, team_id, team_name, internship_week, mentor, manager]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/UserId" }
+        name: { type: string }
+        role: { $ref: "common.yaml#/components/schemas/Role" }
+        team_id:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/TeamId" }
+            - { type: "null" }
+        team_name: { type: [string, "null"] }
+        internship_week: { type: [integer, "null"], minimum: 1 }
+        mentor:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/PersonRef" }
+            - { type: "null" }
+        manager:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/PersonRef" }
+            - { type: "null" }
+    TaskBrief:
+      type: object
+      required: [id, stage_id, title, status, due_date]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/TaskId" }
+        stage_id: { $ref: "common.yaml#/components/schemas/StageId" }
+        title: { type: string }
+        status: { $ref: "common.yaml#/components/schemas/TaskStatus" }
+        due_date: { type: [string, "null"], format: date }
+    NextStep:
+      type: object
+      required: [task_id, title, reason]
+      additionalProperties: false
+      properties:
+        task_id: { $ref: "common.yaml#/components/schemas/TaskId" }
+        title: { type: string }
+        reason: { type: string }
+    OnboardingContext:
+      description: Сжатое состояние адаптации. Следующие шаги уже посчитаны core-api.
+      type: object
+      required: [progress, tasks, next_steps]
+      additionalProperties: false
+      properties:
+        progress: { type: integer, minimum: 0, maximum: 100 }
+        tasks:
+          description: Незавершённые задачи текущего и просроченных этапов.
+          type: array
+          items: { $ref: "#/components/schemas/TaskBrief" }
+        next_steps:
+          type: array
+          maxItems: 3
+          items: { $ref: "#/components/schemas/NextStep" }
+    HistoryItem:
+      type: object
+      required: [role, text]
+      additionalProperties: false
+      properties:
+        role: { type: string, enum: [user, assistant] }
+        text: { type: string }
+    ChatRequest:
+      type: object
+      required: [request_id, now, timezone, user, onboarding, history, state, message]
+      additionalProperties: false
+      properties:
+        request_id:
+          description: >
+            Уникален для каждого сообщения пользователя. Из него агент выводит ключи идемпотентности
+            черновиков, поэтому повтор запроса с тем же request_id не создаёт второй черновик.
+          type: string
+          minLength: 8
+        now:
+          description: Текущее время backend. Нужно агенту для относительных дат («завтра», «в пятницу»).
+          type: string
+          format: date-time
+        timezone:
+          type: string
+          examples: [Europe/Moscow]
+        user: { $ref: "#/components/schemas/UserContext" }
+        onboarding: { $ref: "#/components/schemas/OnboardingContext" }
+        history:
+          description: Последние сообщения диалога, от старых к новым, без текущего.
+          type: array
+          items: { $ref: "#/components/schemas/HistoryItem" }
+        state:
+          description: >
+            Состояние диалога из предыдущего ответа агента (например, незаконченное оформление отгула).
+            Для core-api непрозрачно: он сохраняет его и возвращает как есть. null — диалог с чистого листа.
+          type: [object, "null"]
+        message: { type: string, minLength: 1, maxLength: 4000 }
+
+    ProposedAction:
+      description: Черновик, уже созданный агентом в corp-mock. core-api сохраняет его как карточку действия.
+      type: object
+      required: [type, title, external_id, fields]
+      additionalProperties: false
+      properties:
+        type: { $ref: "common.yaml#/components/schemas/ActionType" }
+        title: { type: string }
+        external_id: { $ref: "common.yaml#/components/schemas/RequestId" }
+        fields:
+          type: object
+          additionalProperties: { type: string }
+    TaskUpdate:
+      description: Предложение изменить статус задачи. core-api проверяет владельца и допустимость.
+      type: object
+      required: [task_id, status]
+      additionalProperties: false
+      properties:
+        task_id: { $ref: "common.yaml#/components/schemas/TaskId" }
+        status: { $ref: "common.yaml#/components/schemas/TaskStatus" }
+    Contact:
+      type: object
+      required: [name, role_title]
+      additionalProperties: false
+      properties:
+        id:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/UserId" }
+            - { type: "null" }
+        name: { type: string }
+        role_title: { type: string }
+        channel: { type: [string, "null"] }
+    Escalation:
+      description: Вопрос требует человека — к кому обратиться.
+      type: object
+      required: [needed, contact]
+      additionalProperties: false
+      properties:
+        needed: { type: boolean }
+        contact:
+          oneOf:
+            - { $ref: "#/components/schemas/Contact" }
+            - { type: "null" }
+    TraceStep:
+      type: object
+      required: [tool, ok, ms]
+      additionalProperties: false
+      properties:
+        tool: { type: string }
+        ok: { type: boolean }
+        ms: { type: integer, minimum: 0 }
+        error_code:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/ErrorCode" }
+            - { type: "null" }
+    ChatResponse:
+      type: object
+      required: [text, sources, proposed_actions, task_updates, suggestions, missing_fields, escalation, state, status, trace]
+      additionalProperties: false
+      properties:
+        text:
+          description: Ответ пользователю, Markdown.
+          type: string
+          minLength: 1
+        sources:
+          type: array
+          items: { $ref: "common.yaml#/components/schemas/Source" }
+        proposed_actions:
+          type: array
+          items: { $ref: "#/components/schemas/ProposedAction" }
+        task_updates:
+          type: array
+          items: { $ref: "#/components/schemas/TaskUpdate" }
+        suggestions:
+          type: array
+          items: { type: string }
+        missing_fields:
+          description: Чего не хватает для действия (агент задал уточняющий вопрос). Пусто, если уточнять нечего.
+          type: array
+          items: { type: string }
+          examples: [[date_from, date_to]]
+        escalation: { $ref: "#/components/schemas/Escalation" }
+        state:
+          description: Состояние диалога для следующего запроса. null — диалог завершён.
+          type: [object, "null"]
+        status:
+          type: string
+          enum: [ok, degraded]
+        trace:
+          description: Какие инструменты вызывались. Для диагностики и проверок качества.
+          type: array
+          items: { $ref: "#/components/schemas/TraceStep" }

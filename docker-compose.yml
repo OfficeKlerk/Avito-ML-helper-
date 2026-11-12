@@ -1,0 +1,161 @@
+# Запуск: make up  (или docker compose up -d --build --wait)
+# Заглушки сервисов: make stubs-up. Проверки: make contracts, make smoke.
+name: ai-buddy
+
+x-healthcheck: &healthcheck
+  interval: 5s
+  timeout: 3s
+  retries: 12
+  start_period: 5s
+
+x-devkit: &devkit
+  image: ai-buddy-devkit
+  build:
+    context: .
+    dockerfile: devkit/Dockerfile
+    target: runtime
+  volumes:
+    # Правки контрактов, примеров и данных подхватываются после перезапуска, без пересборки.
+    - ./contracts:/repo/contracts:ro
+    - ./fixtures:/repo/fixtures:ro
+    - ./data:/repo/data:ro
+
+x-stub-healthcheck: &stub-healthcheck
+  <<: *healthcheck
+  test: ["CMD", "python", "-c", "import os,urllib.request; urllib.request.urlopen('http://localhost:%s/health' % os.environ['PORT'])"]
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-buddy}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-buddy}
+      POSTGRES_DB: ${POSTGRES_DB:-buddy}
+    ports:
+      - "${POSTGRES_PORT:-15432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/00-schemas.sql:ro
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-buddy} -d ${POSTGRES_DB:-buddy}"]
+
+  corp-mock:
+    build: { context: ./corp-mock, target: runtime }
+    environment:
+      PORT: "8070"
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
+      DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=corp
+      SEED_DIR: /data/seed
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - "${CORP_MOCK_PORT:-8070}:8070"
+    depends_on:
+      postgres: { condition: service_healthy }
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO-", "http://localhost:8070/health"]
+
+  knowledge-service:
+    build: { context: ./knowledge-service, target: runtime }
+    environment:
+      PORT: "8060"
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
+      KB_DIR: /data/kb
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - "${KNOWLEDGE_PORT:-8060}:8060"
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8060/health')"]
+
+  agent:
+    build: { context: ./agent, target: runtime }
+    environment:
+      PORT: "8090"
+      KNOWLEDGE_URL: http://knowledge-service:8060
+      CORP_MOCK_URL: http://corp-mock:8070
+      MCP_URL: http://corp-mock:8070/mcp
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+    ports:
+      - "${AGENT_PORT:-8090}:8090"
+    depends_on:
+      knowledge-service: { condition: service_healthy }
+      corp-mock: { condition: service_healthy }
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
+
+  core-api:
+    build: { context: ./core-api, target: runtime }
+    environment:
+      PORT: "8080"
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
+      DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=core
+      AGENT_URL: http://agent:8090
+      CORP_MOCK_URL: http://corp-mock:8070
+      SEED_DIR: /data/seed
+    volumes:
+      - ./data:/data:ro
+    ports:
+      - "${CORE_API_PORT:-8080}:8080"
+    depends_on:
+      postgres: { condition: service_healthy }
+      agent: { condition: service_healthy }
+      corp-mock: { condition: service_healthy }
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+
+  # ---- Заглушки соседних сервисов по примерам из fixtures/ (профиль stubs) ----
+  # Чтобы разрабатывать сервис против заглушки, укажи ему её адрес, например AGENT_URL=http://stub-agent:8090.
+  stub-core-api:
+    <<: *devkit
+    profiles: [stubs]
+    environment: { STUB_SERVICE: core-api, STUB_CONTRACTS: "A", PORT: "8080" }
+    ports: ["${STUB_CORE_API_PORT:-18080}:8080"]
+    healthcheck: *stub-healthcheck
+
+  stub-agent:
+    <<: *devkit
+    profiles: [stubs]
+    environment: { STUB_SERVICE: agent, STUB_CONTRACTS: "B", PORT: "8090" }
+    ports: ["${STUB_AGENT_PORT:-18090}:8090"]
+    healthcheck: *stub-healthcheck
+
+  stub-corp-mock:
+    <<: *devkit
+    profiles: [stubs]
+    environment: { STUB_SERVICE: corp-mock, STUB_CONTRACTS: "C,D", PORT: "8070" }
+    ports: ["${STUB_CORP_MOCK_PORT:-18070}:8070"]
+    healthcheck: *stub-healthcheck
+
+  stub-knowledge-service:
+    <<: *devkit
+    profiles: [stubs]
+    environment: { STUB_SERVICE: knowledge-service, STUB_CONTRACTS: "E", PORT: "8060" }
+    ports: ["${STUB_KNOWLEDGE_PORT:-18060}:8060"]
+    healthcheck: *stub-healthcheck
+
+  # ---- Проверка контрактов и сквозная проверка (профиль tools) ----
+  devkit:
+    <<: *devkit
+    profiles: [tools]
+    environment:
+      CORE_API_URL: http://core-api:8080
+      AGENT_URL: http://agent:8090
+      KNOWLEDGE_URL: http://knowledge-service:8060
+      CORP_MOCK_URL: http://corp-mock:8070
+      STUB_CORE_API_URL: http://stub-core-api:8080
+      STUB_AGENT_URL: http://stub-agent:8090
+      STUB_KNOWLEDGE_URL: http://stub-knowledge-service:8060
+      STUB_CORP_MOCK_URL: http://stub-corp-mock:8070
+    command: ["python", "-m", "devkit.validate"]
+
+volumes:
+  pgdata:

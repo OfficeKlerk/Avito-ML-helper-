@@ -1,0 +1,76 @@
+{
+  "contract": "C",
+  "operation": "access_create_draft",
+  "tool": "access_create_draft",
+  "request_schema": "c_mcp_tools.yaml#/components/schemas/AccessCreateDraftInput",
+  "cases": [
+    {
+      "name": "draft_created",
+      "kind": "success",
+      "description": "Черновик заявки на GitLab.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {
+          "system": "gitlab",
+          "reason": "Нужен для работы с репозиториями команды",
+          "idempotency_key": "rq-20261111-0002:access_create_draft"
+        }
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "id": "req_anna_gitlab_1",
+          "type": "access_request",
+          "status": "draft",
+          "owner_id": "u_anna",
+          "team_id": "team_delivery",
+          "approver": {
+            "id": "u_olga",
+            "name": "Ольга Крылова"
+          },
+          "payload": {
+            "system": "gitlab",
+            "reason": "Нужен для работы с репозиториями команды"
+          },
+          "summary": "Доступ к GitLab",
+          "external_ref": null,
+          "fulfilled_at": null,
+          "created_at": "2026-11-11T10:05:00+03:00",
+          "updated_at": "2026-11-11T10:05:00+03:00"
+        }
+      },
+      "response_schema": "common.yaml#/components/schemas/CorpRequest"
+    },
+    {
+      "name": "system_not_allowed",
+      "kind": "forbidden",
+      "description": "Система не предусмотрена для команды пользователя.",
+      "match": {
+        "body": {
+          "system": "vpn"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_max>"
+        },
+        "arguments": {
+          "system": "vpn",
+          "reason": "Хочу подключаться к стендам",
+          "idempotency_key": "rq-20261111-0002:access_create_draft"
+        }
+      },
+      "response": {
+        "is_error": true,
+        "body": {
+          "error": {
+            "code": "forbidden",
+            "message": "Доступ к VPN не предусмотрен для твоей команды."
+          }
+        }
+      }
+    }
+  ]
+}

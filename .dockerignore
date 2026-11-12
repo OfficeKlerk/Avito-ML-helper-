@@ -1,0 +1,11 @@
+.git
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.coverage
+**/.venv
+agent
+knowledge-service
+core-api
+corp-mock
+docs

@@ -1,0 +1,67 @@
+{
+  "contract": "A",
+  "operation": "action_get",
+  "method": "GET",
+  "path": "/api/actions/{action_id}",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "draft",
+      "kind": "success",
+      "description": "Карточка черновика отгула.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "act_anna_dayoff_1",
+          "type": "absence_request",
+          "status": "draft",
+          "title": "Отгул 13.11.2026",
+          "fields": {
+            "Тип": "Отгул",
+            "Дата": "13.11.2026",
+            "Согласует": "Ольга Крылова",
+            "Комментарий": "Личные дела"
+          },
+          "external_id": "req_anna_dayoff_1",
+          "result": null,
+          "error": null,
+          "created_at": "2026-11-11T10:02:05+03:00",
+          "updated_at": "2026-11-11T10:02:05+03:00"
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ActionCard"
+    },
+    {
+      "name": "foreign_card",
+      "kind": "not_found",
+      "description": "Чужая карточка неотличима от несуществующей.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_max>"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "error": {
+            "code": "not_found",
+            "message": "Действие не найдено."
+          }
+        }
+      }
+    }
+  ]
+}

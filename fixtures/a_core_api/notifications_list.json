@@ -1,0 +1,64 @@
+{
+  "contract": "A",
+  "operation": "notifications_list",
+  "method": "GET",
+  "path": "/api/notifications",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "reminder",
+      "kind": "success",
+      "description": "Напоминание о задаче и смена статуса заявки.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "items": [
+            {
+              "id": "ntf_anna_002",
+              "kind": "action_status",
+              "text": "Заявка «Отгул 13.11.2026» отправлена на согласование.",
+              "task_id": null,
+              "action_id": "act_anna_dayoff_1",
+              "created_at": "2026-11-11T10:03:10+03:00",
+              "read": false
+            },
+            {
+              "id": "ntf_anna_001",
+              "kind": "reminder",
+              "text": "Сегодня срок задачи «Попроси добавить тебя в ключевые каналы и чаты».",
+              "task_id": "t_join_channels",
+              "action_id": null,
+              "created_at": "2026-11-11T09:00:00+03:00",
+              "read": true
+            }
+          ]
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/NotificationList"
+    },
+    {
+      "name": "no_notifications",
+      "kind": "empty",
+      "description": "Уведомлений нет.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "items": []
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/NotificationList"
+    }
+  ]
+}

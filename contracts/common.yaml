@@ -1,0 +1,199 @@
+# Общие типы контрактов A–E.
+# Формат схем — JSON Schema 2020-12 (тот же диалект, что в OpenAPI 3.1).
+# На эти типы ссылаются остальные файлы: `common.yaml#/components/schemas/<Имя>`.
+
+components:
+  schemas:
+    # ---------- Идентификаторы ----------
+    UserId:
+      type: string
+      pattern: "^u_[a-z0-9_]+$"
+      examples: [u_anna]
+    TeamId:
+      type: string
+      pattern: "^team_[a-z0-9_]+$"
+      examples: [team_delivery]
+    StageId:
+      type: string
+      pattern: "^st_[a-z0-9_]+$"
+      examples: [st_week1]
+    TaskId:
+      type: string
+      pattern: "^t_[a-z0-9_]+$"
+      examples: [t_request_accesses]
+    DocId:
+      type: string
+      pattern: "^kb_[a-z0-9_]+$"
+      examples: [kb_absence_rules]
+    ChunkId:
+      description: Постоянный идентификатор фрагмента. Начинается с идентификатора документа.
+      type: string
+      pattern: "^kb_[a-z0-9_]+#[a-z0-9_-]+$"
+      examples: ["kb_absence_rules#day-off"]
+    RequestId:
+      description: Идентификатор заявки в corp-mock.
+      type: string
+      pattern: "^req_[a-z0-9_]+$"
+      examples: [req_anna_dayoff_1]
+    ActionId:
+      description: Идентификатор карточки действия в core-api.
+      type: string
+      pattern: "^act_[a-z0-9_]+$"
+      examples: [act_anna_dayoff_1]
+    MessageId:
+      type: string
+      pattern: "^msg_[a-z0-9_]+$"
+      examples: [msg_anna_001]
+
+    # ---------- Перечисления ----------
+    Role:
+      type: string
+      enum: [intern, mentor, manager, hr]
+    TaskStatus:
+      type: string
+      enum: [todo, in_progress, done, blocked]
+    ActionType:
+      description: Тип действия. Совпадает с типом заявки в corp-mock.
+      type: string
+      enum: [absence_request, access_request]
+    RequestStatus:
+      description: Статус заявки в corp-mock.
+      type: string
+      enum: [draft, submitted, approved, rejected, cancelled]
+    ActionStatus:
+      description: >
+        Статус карточки действия в core-api. Повторяет статус заявки и добавляет `failed`:
+        отправка не удалась, заявка в corp-mock осталась черновиком.
+      type: string
+      enum: [draft, submitted, approved, rejected, cancelled, failed]
+    AnswerStatus:
+      description: >
+        `ok` — обычный ответ; `degraded` — упрощённый режим (LLM или соседний сервис недоступны,
+        ответ собран без них); `error` — ответ сформировать не удалось, в тексте понятное объяснение.
+      type: string
+      enum: [ok, degraded, error]
+
+    # ---------- Ошибки и состояние ----------
+    ErrorCode:
+      type: string
+      enum:
+        - unauthorized   # 401: нет токена или он недействителен
+        - forbidden      # 403: пользователю нельзя эту операцию или эти данные
+        - not_found      # 404
+        - validation     # 422: запрос не прошёл проверку (даты в прошлом, неверный формат)
+        - conflict       # 409: недопустимый переход статуса
+        - rate_limited   # 429
+        - unavailable    # 503: сервис или его зависимость недоступны
+        - internal       # 500
+    Error:
+      type: object
+      required: [code, message]
+      additionalProperties: false
+      properties:
+        code: { $ref: "#/components/schemas/ErrorCode" }
+        message:
+          description: Текст для пользователя, на русском, без технических деталей.
+          type: string
+          minLength: 1
+        details:
+          description: Необязательные подробности для разработчика (например, имя поля).
+          type: object
+    ErrorResponse:
+      type: object
+      required: [error]
+      additionalProperties: false
+      properties:
+        error: { $ref: "#/components/schemas/Error" }
+    Health:
+      type: object
+      required: [status, service]
+      additionalProperties: false
+      properties:
+        status: { type: string, enum: [ok] }
+        service:
+          type: string
+          enum: [core-api, agent, knowledge-service, corp-mock]
+        version: { type: string }
+
+    # ---------- Общие объекты ----------
+    PersonRef:
+      type: object
+      required: [id, name]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/UserId" }
+        name: { type: string }
+    TeamRef:
+      type: object
+      required: [id, name]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/TeamId" }
+        name: { type: string }
+    Source:
+      description: Проверяемый источник ответа — фрагмент документа базы знаний.
+      type: object
+      required: [doc_id, chunk_id, title]
+      additionalProperties: false
+      properties:
+        doc_id: { $ref: "#/components/schemas/DocId" }
+        chunk_id: { $ref: "#/components/schemas/ChunkId" }
+        title: { type: string }
+        section:
+          description: Заголовок раздела, из которого взят фрагмент.
+          type: [string, "null"]
+
+    # ---------- Заявка corp-mock (используется в контрактах C и D) ----------
+    AbsencePayload:
+      type: object
+      required: [kind, date_from, date_to]
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [day_off, vacation] }
+        date_from: { type: string, format: date }
+        date_to: { type: string, format: date }
+        comment: { type: [string, "null"] }
+    AccessPayload:
+      type: object
+      required: [system, reason]
+      additionalProperties: false
+      properties:
+        system: { $ref: "#/components/schemas/AccessSystem" }
+        reason: { type: string }
+    AccessSystem:
+      type: string
+      enum: [confluence, jira, gitlab, vpn, team_space]
+    CorpRequest:
+      type: object
+      required: [id, type, status, owner_id, team_id, approver, payload, summary, external_ref, fulfilled_at, created_at, updated_at]
+      additionalProperties: false
+      properties:
+        id: { $ref: "#/components/schemas/RequestId" }
+        type: { $ref: "#/components/schemas/ActionType" }
+        status: { $ref: "#/components/schemas/RequestStatus" }
+        owner_id: { $ref: "#/components/schemas/UserId" }
+        team_id: { $ref: "#/components/schemas/TeamId" }
+        approver:
+          description: Кто согласует заявку.
+          oneOf:
+            - { $ref: "#/components/schemas/PersonRef" }
+            - { type: "null" }
+        payload:
+          oneOf:
+            - { $ref: "#/components/schemas/AbsencePayload" }
+            - { $ref: "#/components/schemas/AccessPayload" }
+        summary:
+          description: Короткое описание заявки для карточки, на русском.
+          type: string
+        external_ref:
+          description: Номер заявки в «корпоративной системе». Появляется после отправки.
+          type: [string, "null"]
+          examples: ["ABS-2026-000117"]
+        fulfilled_at:
+          description: >
+            Когда заявка фактически исполнена. Для доступа — момент выдачи: согласованная заявка
+            ещё не означает, что доступ есть. Для отгула всегда null.
+          type: [string, "null"]
+          format: date-time
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }

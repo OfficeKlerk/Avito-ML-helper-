@@ -1,0 +1,120 @@
+{
+  "contract": "A",
+  "operation": "action_confirm",
+  "method": "POST",
+  "path": "/api/actions/{action_id}/confirm",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "submitted",
+      "kind": "success",
+      "description": "Подтверждение черновика — заявка отправлена, результат сохранён. Повтор с тем же ключом возвращает то же самое.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "Idempotency-Key": "confirm-act_anna_dayoff_1-0001"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "act_anna_dayoff_1",
+          "type": "absence_request",
+          "status": "submitted",
+          "title": "Отгул 13.11.2026",
+          "fields": {
+            "Тип": "Отгул",
+            "Дата": "13.11.2026",
+            "Согласует": "Ольга Крылова",
+            "Комментарий": "Личные дела"
+          },
+          "external_id": "req_anna_dayoff_1",
+          "result": {
+            "message": "Заявка отправлена на согласование. Согласует Ольга Крылова.",
+            "external_ref": "ABS-2026-000117"
+          },
+          "error": null,
+          "created_at": "2026-11-11T10:02:05+03:00",
+          "updated_at": "2026-11-11T10:03:10+03:00"
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ActionCard"
+    },
+    {
+      "name": "foreign_card",
+      "kind": "not_found",
+      "description": "Подтвердить чужую карточку нельзя.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_max>",
+          "Idempotency-Key": "confirm-act_anna_dayoff_1-0001"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "error": {
+            "code": "not_found",
+            "message": "Действие не найдено."
+          }
+        }
+      }
+    },
+    {
+      "name": "already_cancelled",
+      "kind": "conflict",
+      "description": "Отменённый черновик подтвердить нельзя.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "Idempotency-Key": "confirm-act_anna_dayoff_1-0001"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "conflict",
+            "message": "Это действие уже отменено."
+          }
+        }
+      }
+    },
+    {
+      "name": "corp_unavailable",
+      "kind": "unavailable",
+      "description": "corp-mock недоступен — карточка остаётся черновиком, запрос можно повторить.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "Idempotency-Key": "confirm-act_anna_dayoff_1-0001"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "error": {
+            "code": "unavailable",
+            "message": "Сервис заявок временно недоступен. Заявка не отправлена — попробуй ещё раз."
+          }
+        }
+      }
+    }
+  ]
+}

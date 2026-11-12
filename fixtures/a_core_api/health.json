@@ -1,0 +1,27 @@
+{
+  "contract": "A",
+  "operation": "health",
+  "method": "GET",
+  "path": "/health",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "ok",
+      "kind": "success",
+      "description": "Сервис работает.",
+      "request": {
+        "headers": {},
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "status": "ok",
+          "service": "core-api",
+          "version": "0.1.0"
+        }
+      },
+      "response_schema": "common.yaml#/components/schemas/Health"
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+{
+  "contract": "A",
+  "operation": "chat_messages_list",
+  "method": "GET",
+  "path": "/api/chat/messages",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "history",
+      "kind": "success",
+      "description": "История из двух обменов; во втором — карточка черновика.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "query": {
+          "limit": "50"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "id": "msg_anna_001",
+              "role": "user",
+              "text": "Что мне делать дальше?",
+              "sources": [],
+              "actions": [],
+              "suggestions": [],
+              "status": "ok",
+              "created_at": "2026-11-11T10:00:00+03:00"
+            },
+            {
+              "id": "msg_anna_002",
+              "role": "assistant",
+              "text": "Сейчас у тебя первая неделя. Вот что стоит сделать в первую очередь:\n\n1. **Попроси добавить тебя в ключевые каналы и чаты** — задача уже в работе, срок сегодня.\n2. **Запроси доступы к рабочим инструментам** — срок завтра, без них не настроить окружение.\n3. **Запроси доступ в пространство команды** — срок 13 ноября.",
+              "sources": [],
+              "actions": [],
+              "suggestions": [
+                "Каких доступов мне не хватает?",
+                "Как оформить отгул?"
+              ],
+              "status": "ok",
+              "created_at": "2026-11-11T10:00:02+03:00"
+            },
+            {
+              "id": "msg_anna_003",
+              "role": "user",
+              "text": "Хочу взять отгул в пятницу",
+              "sources": [],
+              "actions": [],
+              "suggestions": [],
+              "status": "ok",
+              "created_at": "2026-11-11T10:02:00+03:00"
+            },
+            {
+              "id": "msg_anna_004",
+              "role": "assistant",
+              "text": "Отгул оформляется так: предупреди наставника и руководителя, создай заявку и дождись согласования.\n\nЯ подготовил черновик заявки на **пятницу, 13 ноября**. Проверь его и подтверди — тогда заявка уйдёт на согласование Ольге Крыловой. И не забудь заранее предупредить Игоря и Ольгу.",
+              "sources": [
+                {
+                  "doc_id": "kb_absence_rules",
+                  "chunk_id": "kb_absence_rules#day-off",
+                  "title": "Как оформить отгул или отпуск",
+                  "section": "Отгул"
+                }
+              ],
+              "actions": [
+                {
+                  "id": "act_anna_dayoff_1",
+                  "type": "absence_request",
+                  "status": "draft",
+                  "title": "Отгул 13.11.2026",
+                  "fields": {
+                    "Тип": "Отгул",
+                    "Дата": "13.11.2026",
+                    "Согласует": "Ольга Крылова",
+                    "Комментарий": "Личные дела"
+                  },
+                  "external_id": "req_anna_dayoff_1",
+                  "result": null,
+                  "error": null,
+                  "created_at": "2026-11-11T10:02:05+03:00",
+                  "updated_at": "2026-11-11T10:02:05+03:00"
+                }
+              ],
+              "suggestions": [
+                "Что ещё сделать на этой неделе?"
+              ],
+              "status": "ok",
+              "created_at": "2026-11-11T10:02:05+03:00"
+            }
+          ]
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatMessageList"
+    },
+    {
+      "name": "no_messages",
+      "kind": "empty",
+      "description": "Пользователь ещё не писал помощнику.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": []
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatMessageList"
+    }
+  ]
+}

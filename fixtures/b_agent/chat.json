@@ -1,0 +1,1368 @@
+{
+  "contract": "B",
+  "operation": "chat",
+  "method": "POST",
+  "path": "/v1/chat",
+  "request_schema": "b_agent.yaml#/components/schemas/ChatRequest",
+  "cases": [
+    {
+      "name": "next_steps",
+      "kind": "success",
+      "description": "«Что делать дальше» — шаги из контекста адаптации, без инструментов.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Что мне делать дальше?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "Сейчас у тебя первая неделя. Вот что стоит сделать в первую очередь:\n\n1. **Попроси добавить тебя в ключевые каналы и чаты** — задача уже в работе, срок сегодня.\n2. **Запроси доступы к рабочим инструментам** — срок завтра, без них не настроить окружение.\n3. **Запроси доступ в пространство команды** — срок 13 ноября.",
+          "sources": [],
+          "proposed_actions": [],
+          "task_updates": [],
+          "suggestions": [
+            "Каких доступов мне не хватает?",
+            "Как оформить отгул?"
+          ],
+          "missing_fields": [],
+          "escalation": {
+            "needed": false,
+            "contact": null
+          },
+          "state": null,
+          "status": "ok",
+          "trace": []
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "absence_draft",
+      "kind": "success",
+      "description": "Отгул с датой: поиск инструкции, правила, черновик в corp-mock. Заявка НЕ отправлена.",
+      "match": {
+        "body": {
+          "message": "пятниц"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Хочу взять отгул в пятницу"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "Отгул оформляется так: предупреди наставника и руководителя, создай заявку и дождись согласования.\n\nЯ подготовил черновик заявки на **пятницу, 13 ноября**. Проверь его и подтверди — тогда заявка уйдёт на согласование Ольге Крыловой. И не забудь заранее предупредить Игоря и Ольгу.",
+          "sources": [
+            {
+              "doc_id": "kb_absence_rules",
+              "chunk_id": "kb_absence_rules#day-off",
+              "title": "Как оформить отгул или отпуск",
+              "section": "Отгул"
+            }
+          ],
+          "proposed_actions": [
+            {
+              "type": "absence_request",
+              "title": "Отгул 13.11.2026",
+              "external_id": "req_anna_dayoff_1",
+              "fields": {
+                "Тип": "Отгул",
+                "Дата": "13.11.2026",
+                "Согласует": "Ольга Крылова",
+                "Комментарий": "Личные дела"
+              }
+            }
+          ],
+          "task_updates": [],
+          "suggestions": [
+            "Что ещё сделать на этой неделе?"
+          ],
+          "missing_fields": [],
+          "escalation": {
+            "needed": false,
+            "contact": null
+          },
+          "state": null,
+          "status": "ok",
+          "trace": [
+            {
+              "tool": "knowledge_search",
+              "ok": true,
+              "ms": 18,
+              "error_code": null
+            },
+            {
+              "tool": "absence_get_rules",
+              "ok": true,
+              "ms": 12,
+              "error_code": null
+            },
+            {
+              "tool": "absence_create_draft",
+              "ok": true,
+              "ms": 25,
+              "error_code": null
+            }
+          ]
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "absence_clarify",
+      "kind": "success",
+      "description": "Отгул без даты: агент уточняет и возвращает состояние диалога.",
+      "match": {
+        "body": {
+          "message": "отгул"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Как оформить отгул?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "Помогу оформить отгул. На какую дату он нужен? Если дней несколько — напиши первый и последний.",
+          "sources": [
+            {
+              "doc_id": "kb_absence_rules",
+              "chunk_id": "kb_absence_rules#day-off",
+              "title": "Как оформить отгул или отпуск",
+              "section": "Отгул"
+            }
+          ],
+          "proposed_actions": [],
+          "task_updates": [],
+          "suggestions": [
+            "Завтра",
+            "В пятницу"
+          ],
+          "missing_fields": [
+            "date_from",
+            "date_to"
+          ],
+          "escalation": {
+            "needed": false,
+            "contact": null
+          },
+          "state": {
+            "intent": "absence_request",
+            "kind": "day_off"
+          },
+          "status": "ok",
+          "trace": [
+            {
+              "tool": "knowledge_search",
+              "ok": true,
+              "ms": 18,
+              "error_code": null
+            }
+          ]
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "kb_answer",
+      "kind": "success",
+      "description": "Вопрос о команде: ответ по документу, доступному команде пользователя.",
+      "match": {
+        "body": {
+          "message": "стендап"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Во сколько у нас стендап?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "Стендап в команде Авито Доставка проходит каждый рабочий день в 11:00 и длится 15 минут. Формат: что сделал вчера, что планируешь сегодня, что мешает. В первую неделю достаточно рассказать, что изучаешь.",
+          "sources": [
+            {
+              "doc_id": "kb_delivery_rituals",
+              "chunk_id": "kb_delivery_rituals#standup",
+              "title": "Ритуалы команды Авито Доставка",
+              "section": "Ежедневный стендап"
+            }
+          ],
+          "proposed_actions": [],
+          "task_updates": [],
+          "suggestions": [],
+          "missing_fields": [],
+          "escalation": {
+            "needed": false,
+            "contact": null
+          },
+          "state": null,
+          "status": "ok",
+          "trace": [
+            {
+              "tool": "knowledge_search",
+              "ok": true,
+              "ms": 16,
+              "error_code": null
+            }
+          ]
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "access_overview",
+      "kind": "success",
+      "description": "Волна 2: каких доступов не хватает.",
+      "match": {
+        "body": {
+          "message": "доступ"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Каких доступов мне не хватает?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "У тебя есть Confluence и VPN. Заявка на Jira уже отправлена и ждёт согласования. Не хватает **GitLab** и **пространства команды** — на каждую систему нужна отдельная заявка. Оформить заявку на GitLab?",
+          "sources": [
+            {
+              "doc_id": "kb_access_howto",
+              "chunk_id": "kb_access_howto#request",
+              "title": "Как запросить доступы к рабочим инструментам",
+              "section": "Как подать заявку"
+            }
+          ],
+          "proposed_actions": [],
+          "task_updates": [],
+          "suggestions": [
+            "Оформить заявку на GitLab",
+            "Оформить заявку на пространство команды"
+          ],
+          "missing_fields": [],
+          "escalation": {
+            "needed": false,
+            "contact": null
+          },
+          "state": null,
+          "status": "ok",
+          "trace": [
+            {
+              "tool": "access_list_my",
+              "ok": true,
+              "ms": 14,
+              "error_code": null
+            },
+            {
+              "tool": "knowledge_search",
+              "ok": true,
+              "ms": 17,
+              "error_code": null
+            }
+          ]
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "no_answer",
+      "kind": "empty",
+      "description": "Поиск ничего не нашёл: без источников, с контактом, к кому обратиться.",
+      "match": {
+        "body": {
+          "message": "парковк"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Где у нас парковка?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "В базе знаний я не нашёл ответа на этот вопрос. Лучше спросить куратора стажировки — Елену Громову, канал #interns-2026.",
+          "sources": [],
+          "proposed_actions": [],
+          "task_updates": [],
+          "suggestions": [],
+          "missing_fields": [],
+          "escalation": {
+            "needed": true,
+            "contact": {
+              "id": "u_elena",
+              "name": "Елена Громова",
+              "role_title": "Куратор стажировки",
+              "channel": "#interns-2026"
+            }
+          },
+          "state": null,
+          "status": "ok",
+          "trace": [
+            {
+              "tool": "knowledge_search",
+              "ok": true,
+              "ms": 15,
+              "error_code": null
+            },
+            {
+              "tool": "directory_find_contact",
+              "ok": true,
+              "ms": 11,
+              "error_code": null
+            }
+          ]
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "draft_tool_failed",
+      "kind": "degraded",
+      "description": "Инструмент черновика недоступен: агент даёт инструкцию и НЕ сообщает о созданной заявке.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Хочу взять отгул в пятницу"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "Отгул оформляется так: предупреди наставника и руководителя, создай заявку и дождись согласования.\n\nСоздать черновик заявки сейчас не получилось — сервис заявок недоступен. Попробуй ещё раз через пару минут.",
+          "sources": [
+            {
+              "doc_id": "kb_absence_rules",
+              "chunk_id": "kb_absence_rules#day-off",
+              "title": "Как оформить отгул или отпуск",
+              "section": "Отгул"
+            }
+          ],
+          "proposed_actions": [],
+          "task_updates": [],
+          "suggestions": [],
+          "missing_fields": [],
+          "escalation": {
+            "needed": false,
+            "contact": null
+          },
+          "state": {
+            "intent": "absence_request",
+            "kind": "day_off",
+            "date_from": "2026-11-13",
+            "date_to": "2026-11-13"
+          },
+          "status": "degraded",
+          "trace": [
+            {
+              "tool": "knowledge_search",
+              "ok": true,
+              "ms": 18,
+              "error_code": null
+            },
+            {
+              "tool": "absence_create_draft",
+              "ok": false,
+              "ms": 3000,
+              "error_code": "unavailable"
+            }
+          ]
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "llm_degraded",
+      "kind": "degraded",
+      "description": "LLM недоступна: ответ собран правилами.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Что мне делать дальше?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "text": "Сейчас я работаю в упрощённом режиме и могу ответить не на всё. Вот твои ближайшие шаги:\n\n1. Попроси добавить тебя в ключевые каналы и чаты.\n2. Запроси доступы к рабочим инструментам.",
+          "sources": [],
+          "proposed_actions": [],
+          "task_updates": [],
+          "suggestions": [],
+          "missing_fields": [],
+          "escalation": {
+            "needed": false,
+            "contact": null
+          },
+          "state": null,
+          "status": "degraded",
+          "trace": []
+        }
+      },
+      "response_schema": "b_agent.yaml#/components/schemas/ChatResponse"
+    },
+    {
+      "name": "no_token",
+      "kind": "forbidden",
+      "description": "Запрос без токена пользователя.",
+      "request": {
+        "headers": {},
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Привет"
+        }
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthorized",
+            "message": "Нужно войти заново."
+          }
+        }
+      }
+    },
+    {
+      "name": "empty_message",
+      "kind": "validation",
+      "description": "Пустое сообщение.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": ""
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Сообщение не может быть пустым."
+          }
+        }
+      }
+    },
+    {
+      "name": "unavailable",
+      "kind": "unavailable",
+      "description": "Агент не может сформировать ответ совсем.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "X-Request-Id": "rq-20261111-0001"
+        },
+        "body": {
+          "request_id": "rq-20261111-0001",
+          "now": "2026-11-11T10:00:00+03:00",
+          "timezone": "Europe/Moscow",
+          "user": {
+            "id": "u_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team_id": "team_delivery",
+            "team_name": "Авито Доставка",
+            "internship_week": 1,
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            }
+          },
+          "onboarding": {
+            "progress": 7,
+            "tasks": [
+              {
+                "id": "t_join_channels",
+                "stage_id": "st_week1",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "status": "in_progress",
+                "due_date": "2026-11-11"
+              },
+              {
+                "id": "t_request_accesses",
+                "stage_id": "st_week1",
+                "title": "Запроси доступы к рабочим инструментам",
+                "status": "todo",
+                "due_date": "2026-11-12"
+              },
+              {
+                "id": "t_team_space",
+                "stage_id": "st_week1",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_setup_env",
+                "stage_id": "st_week1",
+                "title": "Настрой рабочее окружение",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              },
+              {
+                "id": "t_mentor_notes",
+                "stage_id": "st_week1",
+                "title": "Заведи конспект встреч с наставником",
+                "status": "todo",
+                "due_date": "2026-11-13"
+              }
+            ],
+            "next_steps": [
+              {
+                "task_id": "t_join_channels",
+                "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                "reason": "Задача уже в работе, срок — сегодня."
+              },
+              {
+                "task_id": "t_request_accesses",
+                "title": "Запроси доступы к рабочим инструментам",
+                "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+              },
+              {
+                "task_id": "t_team_space",
+                "title": "Запроси доступ в пространство команды и изучи его",
+                "reason": "Срок — 13 ноября, до конца первой недели."
+              }
+            ]
+          },
+          "history": [],
+          "state": null,
+          "message": "Что мне делать дальше?"
+        }
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "error": {
+            "code": "unavailable",
+            "message": "Сервис временно недоступен. Попробуй ещё раз чуть позже."
+          }
+        }
+      }
+    }
+  ]
+}

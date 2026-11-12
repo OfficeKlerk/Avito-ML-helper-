@@ -1,0 +1,9 @@
+[
+  { "id": "u_anna",  "login": "intern_anna",  "test_password": "buddy2026", "name": "Анна Соколова",  "role": "intern",  "team_id": "team_delivery", "mentor_id": "u_igor", "manager_id": "u_olga",  "start_date": "2026-11-09", "program": "6m" },
+  { "id": "u_max",   "login": "intern_max",   "test_password": "buddy2026", "name": "Максим Орлов",   "role": "intern",  "team_id": "team_auto",     "mentor_id": "u_dina", "manager_id": "u_pavel", "start_date": "2026-10-12", "program": "6m" },
+  { "id": "u_igor",  "login": "mentor_igor",  "test_password": "buddy2026", "name": "Игорь Белов",    "role": "mentor",  "team_id": "team_delivery", "mentor_id": null,     "manager_id": "u_olga",  "start_date": null, "program": null },
+  { "id": "u_olga",  "login": "lead_olga",    "test_password": "buddy2026", "name": "Ольга Крылова",  "role": "manager", "team_id": "team_delivery", "mentor_id": null,     "manager_id": null,      "start_date": null, "program": null },
+  { "id": "u_dina",  "login": "mentor_dina",  "test_password": "buddy2026", "name": "Дина Ахметова",  "role": "mentor",  "team_id": "team_auto",     "mentor_id": null,     "manager_id": "u_pavel", "start_date": null, "program": null },
+  { "id": "u_pavel", "login": "lead_pavel",   "test_password": "buddy2026", "name": "Павел Зимин",    "role": "manager", "team_id": "team_auto",     "mentor_id": null,     "manager_id": null,      "start_date": null, "program": null },
+  { "id": "u_elena", "login": "hr_elena",     "test_password": "buddy2026", "name": "Елена Громова",  "role": "hr",      "team_id": null,            "mentor_id": null,     "manager_id": null,      "start_date": null, "program": null }
+]

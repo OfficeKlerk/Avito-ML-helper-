@@ -1,0 +1,460 @@
+openapi: 3.1.0
+info:
+  title: "Контракт A: API-клиент ↔ core-api"
+  version: 0.1.0
+  description: >
+    Точка входа для тестового клиента и интеграционных тестов, позднее — для интерфейса.
+    Все запросы, кроме входа и /health, требуют `Authorization: Bearer <JWT>`.
+    Пользователь видит только свои сообщения, задачи и карточки действий.
+servers:
+  - url: http://localhost:8080
+security:
+  - bearer: []
+paths:
+  /health:
+    get:
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: Сервис работает
+          content:
+            application/json:
+              schema: { $ref: "common.yaml#/components/schemas/Health" }
+
+  /api/auth/login:
+    post:
+      operationId: auth_login
+      summary: Тестовая авторизация (имитация корпоративной)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: Вход выполнен
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/me:
+    get:
+      operationId: me
+      responses:
+        "200":
+          description: Профиль текущего пользователя
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/onboarding:
+    get:
+      operationId: onboarding_get
+      summary: Этапы адаптации, задачи, прогресс и 1–3 следующих шага
+      responses:
+        "200":
+          description: Состояние адаптации текущего пользователя
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Onboarding" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/onboarding/tasks/{task_id}:
+    patch:
+      operationId: onboarding_task_patch
+      summary: Изменить статус своей задачи
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema: { $ref: "common.yaml#/components/schemas/TaskId" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/TaskPatch" }
+      responses:
+        "200":
+          description: Обновлённая задача
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/chat/messages:
+    get:
+      operationId: chat_messages_list
+      summary: История чата текущего пользователя (от старых к новым)
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Сообщения
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatMessageList" }
+        "401": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: chat_message_post
+      summary: Отправить сообщение помощнику
+      description: >
+        core-api сохраняет сообщение, вызывает agent (контракт B) и сохраняет ответ.
+        Если agent недоступен, возвращается 200 с `assistant_message.status` = `degraded` или `error`
+        и понятным текстом — не 5xx.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ChatMessagePost" }
+      responses:
+        "200":
+          description: Сохранённое сообщение пользователя и ответ помощника
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ChatExchange" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+
+  /api/actions:
+    get:
+      operationId: actions_list
+      summary: История карточек действий текущего пользователя
+      responses:
+        "200":
+          description: Карточки, новые сверху
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActionCardList" }
+        "401": { $ref: "#/components/responses/Error" }
+
+  /api/actions/{action_id}:
+    get:
+      operationId: action_get
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      responses:
+        "200":
+          description: Карточка действия
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActionCard" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /api/actions/{action_id}/confirm:
+    post:
+      operationId: action_confirm
+      summary: Подтвердить черновик — core-api отправляет заявку в corp-mock (контракт D)
+      description: >
+        Повтор с тем же `Idempotency-Key` возвращает тот же результат и не создаёт вторую заявку.
+        Если corp-mock недоступен, возвращается 503, карточка остаётся черновиком и запрос можно повторить.
+        Если ответ corp-mock потерялся, core-api перед повтором выясняет статус заявки.
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string, minLength: 8, maxLength: 128 }
+      responses:
+        "200":
+          description: Карточка после отправки
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActionCard" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /api/actions/{action_id}/cancel:
+    post:
+      operationId: action_cancel
+      summary: Отменить черновик или отправленную заявку
+      parameters:
+        - $ref: "#/components/parameters/ActionId"
+      responses:
+        "200":
+          description: Карточка после отмены
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActionCard" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/notifications:
+    get:
+      operationId: notifications_list
+      summary: Напоминания и смены статусов (волна 3)
+      responses:
+        "200":
+          description: Уведомления, новые сверху
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotificationList" }
+        "401": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "JWT HS256, claims: sub (UserId), login, role, team_id, exp. Секрет — JWT_SECRET."
+  parameters:
+    ActionId:
+      name: action_id
+      in: path
+      required: true
+      schema: { $ref: "common.yaml#/components/schemas/ActionId" }
+  responses:
+    Error:
+      description: Ошибка в едином формате
+      content:
+        application/json:
+          schema: { $ref: "common.yaml#/components/schemas/ErrorResponse" }
+  schemas:
+    LoginRequest:
+      type: object
+      required: [login, password]
+      additionalProperties: false
+      properties:
+        login: { type: string, minLength: 1 }
+        password: { type: string, minLength: 1 }
+    LoginResponse:
+      type: object
+      required: [token, user]
+      additionalProperties: false
+      properties:
+        token: { type: string, minLength: 1 }
+        user: { $ref: "#/components/schemas/User" }
+    User:
+      type: object
+      required: [id, login, name, role, team, mentor, manager, start_date, internship_week, program]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/UserId" }
+        login: { type: string }
+        name: { type: string }
+        role: { $ref: "common.yaml#/components/schemas/Role" }
+        team:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/TeamRef" }
+            - { type: "null" }
+        mentor:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/PersonRef" }
+            - { type: "null" }
+        manager:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/PersonRef" }
+            - { type: "null" }
+        start_date: { type: [string, "null"], format: date }
+        internship_week:
+          description: Номер недели стажировки, считается от start_date. Для не-стажёров null.
+          type: [integer, "null"]
+          minimum: 1
+        program:
+          description: Длительность программы стажировки.
+          type: [string, "null"]
+          enum: ["6m", "9m", null]
+
+    Link:
+      type: object
+      required: [title, url]
+      additionalProperties: false
+      properties:
+        title: { type: string }
+        url: { type: string }
+    Task:
+      type: object
+      required: [id, stage_id, title, description, status, due_date, links, related_action_type, related_action_id]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/TaskId" }
+        stage_id: { $ref: "common.yaml#/components/schemas/StageId" }
+        title: { type: string }
+        description: { type: string }
+        status: { $ref: "common.yaml#/components/schemas/TaskStatus" }
+        due_date: { type: [string, "null"], format: date }
+        links:
+          type: array
+          items: { $ref: "#/components/schemas/Link" }
+        related_action_type:
+          description: Каким действием задача закрывается, если таким действием закрывается.
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/ActionType" }
+            - { type: "null" }
+        related_action_id:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/ActionId" }
+            - { type: "null" }
+    TaskPatch:
+      type: object
+      required: [status]
+      additionalProperties: false
+      properties:
+        status: { $ref: "common.yaml#/components/schemas/TaskStatus" }
+    Stage:
+      type: object
+      required: [id, title, period, status, tasks]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/StageId" }
+        title: { type: string }
+        period:
+          description: Период из чек-листа стажёра.
+          type: string
+          examples: ["1 неделя"]
+        status: { type: string, enum: [todo, in_progress, done] }
+        tasks:
+          type: array
+          items: { $ref: "#/components/schemas/Task" }
+    NextStep:
+      type: object
+      required: [task_id, title, reason]
+      additionalProperties: false
+      properties:
+        task_id: { $ref: "common.yaml#/components/schemas/TaskId" }
+        title: { type: string }
+        reason:
+          description: Почему этот шаг сейчас. Считается правилами, без LLM.
+          type: string
+    Onboarding:
+      type: object
+      required: [stages, progress, next_steps]
+      additionalProperties: false
+      properties:
+        stages:
+          type: array
+          items: { $ref: "#/components/schemas/Stage" }
+        progress:
+          description: Доля выполненных задач, 0–100.
+          type: integer
+          minimum: 0
+          maximum: 100
+        next_steps:
+          type: array
+          maxItems: 3
+          items: { $ref: "#/components/schemas/NextStep" }
+
+    ActionCard:
+      type: object
+      required: [id, type, status, title, fields, external_id, result, error, created_at, updated_at]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/ActionId" }
+        type: { $ref: "common.yaml#/components/schemas/ActionType" }
+        status: { $ref: "common.yaml#/components/schemas/ActionStatus" }
+        title: { type: string }
+        fields:
+          description: Человекочитаемые поля карточки.
+          type: object
+          additionalProperties: { type: string }
+        external_id:
+          description: Идентификатор заявки в corp-mock.
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/RequestId" }
+            - { type: "null" }
+        result:
+          description: Результат отправки. Заполняется после подтверждения.
+          oneOf:
+            - type: object
+              required: [message]
+              additionalProperties: false
+              properties:
+                message: { type: string }
+                external_ref: { type: [string, "null"] }
+            - { type: "null" }
+        error: { type: [string, "null"] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    ActionCardList:
+      type: object
+      required: [actions]
+      additionalProperties: false
+      properties:
+        actions:
+          type: array
+          items: { $ref: "#/components/schemas/ActionCard" }
+
+    ChatMessage:
+      type: object
+      required: [id, role, text, sources, actions, suggestions, status, created_at]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/MessageId" }
+        role: { type: string, enum: [user, assistant] }
+        text:
+          description: Текст сообщения, Markdown.
+          type: string
+        sources:
+          type: array
+          items: { $ref: "common.yaml#/components/schemas/Source" }
+        actions:
+          type: array
+          items: { $ref: "#/components/schemas/ActionCard" }
+        suggestions:
+          description: Подсказки следующих вопросов и шагов.
+          type: array
+          items: { type: string }
+        status: { $ref: "common.yaml#/components/schemas/AnswerStatus" }
+        created_at: { type: string, format: date-time }
+    ChatMessageList:
+      type: object
+      required: [messages]
+      additionalProperties: false
+      properties:
+        messages:
+          type: array
+          items: { $ref: "#/components/schemas/ChatMessage" }
+    ChatMessagePost:
+      type: object
+      required: [text]
+      additionalProperties: false
+      properties:
+        text: { type: string, minLength: 1, maxLength: 4000 }
+    ChatExchange:
+      type: object
+      required: [user_message, assistant_message]
+      additionalProperties: false
+      properties:
+        user_message: { $ref: "#/components/schemas/ChatMessage" }
+        assistant_message: { $ref: "#/components/schemas/ChatMessage" }
+
+    Notification:
+      type: object
+      required: [id, kind, text, created_at, read]
+      additionalProperties: false
+      properties:
+        id: { type: string, pattern: "^ntf_[a-z0-9_]+$" }
+        kind: { type: string, enum: [reminder, action_status] }
+        text: { type: string }
+        task_id:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/TaskId" }
+            - { type: "null" }
+        action_id:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/ActionId" }
+            - { type: "null" }
+        created_at: { type: string, format: date-time }
+        read: { type: boolean }
+    NotificationList:
+      type: object
+      required: [items]
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Notification" }
