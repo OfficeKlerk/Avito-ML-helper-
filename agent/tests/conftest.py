@@ -24,6 +24,8 @@ def default_responses() -> dict:
         "absence_create_draft": fixture_case("c_mcp_tools/absence_create_draft")["response"]["body"],
         "directory_find_contact": fixture_case("c_mcp_tools/directory_find_contact")["response"]["body"],
         "absence_get_rules": fixture_case("c_mcp_tools/absence_get_rules")["response"]["body"],
+        "access_list_my": fixture_case("c_mcp_tools/access_list_my")["response"]["body"],
+        "access_create_draft": fixture_case("c_mcp_tools/access_create_draft")["response"]["body"],
     }
 
 
@@ -45,6 +47,9 @@ class FakeTools(Tools):
         if tool == "absence_create_draft":  # как настоящий corp-mock: черновик хранит переданные даты
             result["payload"] = {"kind": arguments["kind"], "date_from": arguments["date_from"],
                                  "date_to": arguments["date_to"], "comment": None}
+        if tool == "access_create_draft":  # своя заявка на каждую систему
+            result.update(id=f"req_anna_{arguments['system']}_1", summary=None,
+                          payload={"system": arguments["system"], "reason": arguments["reason"]})
         return result
 
     def _respond(self, name):

@@ -97,7 +97,8 @@ def test_absence_without_mentor_and_manager(client, body):
     assert "предупредить" not in data["text"]
 
 
-def test_unknown_question_gives_contact(client, body):
+def test_unknown_question_gives_contact(client, body, tools_responses):
+    tools_responses["knowledge_search"] = []
     body["message"] = "Где у нас парковка?"
     _, data = post(client, body)
     assert data["status"] == "ok" and "Что мне делать дальше?" in data["suggestions"]
@@ -186,6 +187,7 @@ def test_draft_without_approver_and_summary(client, body, tools_responses):
 
 
 def test_unknown_question_without_contact(client, body, tools_responses):
+    tools_responses["knowledge_search"] = []
     tools_responses["directory_find_contact"] = ToolError("unavailable", "Сервис временно недоступен.")
     body["message"] = "Где у нас парковка?"
     _, data = post(client, body)

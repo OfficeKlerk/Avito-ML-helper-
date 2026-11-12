@@ -15,7 +15,7 @@ from .reply import response
 from .tools import Tools, ToolError
 
 PROMPTS_DIR = Path(os.environ.get("PROMPTS_DIR") or Path(__file__).resolve().parents[1] / "prompts")
-CORP_TOOLS = ("directory_find_contact", "absence_get_rules", "absence_create_draft")
+CORP_TOOLS = ("directory_find_contact", "absence_get_rules", "absence_create_draft", "access_list_my", "access_create_draft")
 
 
 def tool_definitions() -> list[dict[str, Any]]:
@@ -79,11 +79,17 @@ def run_tool(call: dict[str, Any], request_id: str, tools: Tools, sources: dict[
 
     if name == "absence_create_draft":
         args["idempotency_key"] = f"{request_id}:absence_create_draft"
+    elif name == "access_create_draft":  # своя заявка на каждую систему
+        args["idempotency_key"] = f"{request_id}:access_create_draft:{args.get('system')}"
     problems = (contract.errors(args, "SearchRequest", "e_knowledge.yaml") if name == "knowledge_search"
                 else contract.errors(args, contract.tool_input_schema(name), "c_mcp_tools.yaml"))
     if problems:
         return _error("validation", "Аргументы не подходят: " + "; ".join(problems))
 
+    if name == "access_create_draft":
+        refusal = already_has_access(tools, args["system"])
+        if refusal:
+            return _error("conflict", refusal)
     try:
         if name == "knowledge_search":
             chunks = tools.search(args["query"], args.get("top_k", 3))
@@ -97,6 +103,20 @@ def run_tool(call: dict[str, Any], request_id: str, tools: Tools, sources: dict[
         contacts.extend({"id": c.get("id"), "name": c["name"], "role_title": c["role_title"], "channel": c.get("channel")}
                         for c in result.get("contacts", []))
     return result
+
+
+def already_has_access(tools: Tools, system: str) -> str | None:
+    """Модели нельзя создать заявку на доступ, который уже есть или уже запрошен: проверяем, а не просим."""
+    try:
+        items = {a["system"]: a for a in tools.mcp("access_list_my")["accesses"]}
+    except ToolError:
+        return None  # список не получили — решит corp-mock
+    item = items.get(system) or {}
+    if item.get("status") == "granted":
+        return f"Доступ к {item['title']} у пользователя уже есть. Черновик не нужен."
+    if item.get("status") == "pending":
+        return f"Заявка на доступ к {item['title']} уже отправлена и ждёт согласования. Черновик не нужен."
+    return None
 
 
 def _error(code: str, message: str) -> dict[str, Any]:
