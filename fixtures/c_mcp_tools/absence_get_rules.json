@@ -1,0 +1,54 @@
+{
+  "contract": "C",
+  "operation": "absence_get_rules",
+  "tool": "absence_get_rules",
+  "request_schema": "c_mcp_tools.yaml#/components/schemas/EmptyInput",
+  "cases": [
+    {
+      "name": "rules",
+      "kind": "success",
+      "description": "Тестовые правила отгула и отпуска.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {}
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "disclaimer": "Тестовая инструкция, не является регламентом Авито",
+          "rules": [
+            {
+              "kind": "day_off",
+              "title": "Отгул",
+              "max_days": 2,
+              "min_notice_days": 1,
+              "approver_role": "manager",
+              "steps": [
+                "Предупреди наставника и руководителя заранее.",
+                "Создай заявку на отгул в сервисе отсутствий.",
+                "Дождись согласования руководителя.",
+                "Отметь отсутствие в календаре команды."
+              ]
+            },
+            {
+              "kind": "vacation",
+              "title": "Отпуск",
+              "max_days": 14,
+              "min_notice_days": 14,
+              "approver_role": "manager",
+              "steps": [
+                "Обсуди даты с руководителем не позже чем за две недели.",
+                "Создай заявку на отпуск в сервисе отсутствий.",
+                "Дождись согласования руководителя.",
+                "Передай текущие задачи наставнику."
+              ]
+            }
+          ]
+        }
+      },
+      "response_schema": "c_mcp_tools.yaml#/components/schemas/AbsenceRules"
+    }
+  ]
+}

@@ -1,0 +1,276 @@
+{
+  "contract": "A",
+  "operation": "onboarding_get",
+  "method": "GET",
+  "path": "/api/onboarding",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "anna_week1",
+      "kind": "success",
+      "description": "Адаптация Анны на третий день: одна задача сделана, одна в работе.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "stages": [
+            {
+              "id": "st_week1",
+              "title": "Первая неделя",
+              "period": "1 неделя",
+              "status": "in_progress",
+              "tasks": [
+                {
+                  "id": "t_meet_team",
+                  "stage_id": "st_week1",
+                  "title": "Познакомься с командой",
+                  "description": "Узнай, кто чем занимается и к кому идти с вопросами.",
+                  "status": "done",
+                  "due_date": "2026-11-11",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_join_channels",
+                  "stage_id": "st_week1",
+                  "title": "Попроси добавить тебя в ключевые каналы и чаты",
+                  "description": "Попроси наставника добавить тебя во все рабочие каналы команды, в том числе закрытые.",
+                  "status": "in_progress",
+                  "due_date": "2026-11-11",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_request_accesses",
+                  "stage_id": "st_week1",
+                  "title": "Запроси доступы к рабочим инструментам",
+                  "description": "Проверь, каких обязательных доступов не хватает, и подай заявки.",
+                  "status": "todo",
+                  "due_date": "2026-11-12",
+                  "links": [
+                    {
+                      "title": "Как запросить доступы",
+                      "url": "kb://kb_access_howto"
+                    }
+                  ],
+                  "related_action_type": "access_request",
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_team_space",
+                  "stage_id": "st_week1",
+                  "title": "Запроси доступ в пространство команды и изучи его",
+                  "description": "В пространстве команды лежат договорённости, схемы сервисов и планы.",
+                  "status": "todo",
+                  "due_date": "2026-11-13",
+                  "links": [],
+                  "related_action_type": "access_request",
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_setup_env",
+                  "stage_id": "st_week1",
+                  "title": "Настрой рабочее окружение",
+                  "description": "Подними проект локально по инструкции команды.",
+                  "status": "todo",
+                  "due_date": "2026-11-13",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_mentor_notes",
+                  "stage_id": "st_week1",
+                  "title": "Заведи конспект встреч с наставником",
+                  "description": "Записывай договорённости, обратную связь и вопросы к следующей встрече 1:1.",
+                  "status": "todo",
+                  "due_date": "2026-11-13",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                }
+              ]
+            },
+            {
+              "id": "st_week2",
+              "title": "Вторая неделя",
+              "period": "2 неделя",
+              "status": "todo",
+              "tasks": [
+                {
+                  "id": "t_progress_tool",
+                  "stage_id": "st_week2",
+                  "title": "Внеси цели и ожидания в инструмент отслеживания прогресса",
+                  "description": "Запроси инструмент у куратора стажировки и согласуй цели с наставником.",
+                  "status": "todo",
+                  "due_date": "2026-11-18",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_read_team_docs",
+                  "stage_id": "st_week2",
+                  "title": "Изучи документы и мануалы команды",
+                  "description": "Прочитай материалы, которыми поделились наставник и руководитель.",
+                  "status": "todo",
+                  "due_date": "2026-11-20",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_first_task",
+                  "stage_id": "st_week2",
+                  "title": "Возьми первую рабочую задачу",
+                  "description": "Выбери задачу вместе с наставником и доведи её до ревью.",
+                  "status": "todo",
+                  "due_date": "2026-11-20",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                }
+              ]
+            },
+            {
+              "id": "st_month1",
+              "title": "Первый месяц",
+              "period": "1 месяц",
+              "status": "todo",
+              "tasks": [
+                {
+                  "id": "t_data_protection",
+                  "stage_id": "st_month1",
+                  "title": "Изучи основы защиты данных",
+                  "description": "Ознакомься с материалами о защите персональных данных и конфиденциальной информации.",
+                  "status": "todo",
+                  "due_date": "2026-12-07",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_first_review",
+                  "stage_id": "st_month1",
+                  "title": "Пройди первое код-ревью",
+                  "description": "Доведи первую задачу до слияния и разбери замечания с наставником.",
+                  "status": "todo",
+                  "due_date": "2026-12-07",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                }
+              ]
+            },
+            {
+              "id": "st_month2",
+              "title": "Второй месяц",
+              "period": "2 месяц",
+              "status": "todo",
+              "tasks": [
+                {
+                  "id": "t_practice_memo",
+                  "stage_id": "st_month2",
+                  "title": "Изучи памятку о закрытии практики",
+                  "description": "Узнай, как оформить практику и учебные работы по стажировке.",
+                  "status": "todo",
+                  "due_date": "2027-01-04",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                }
+              ]
+            },
+            {
+              "id": "st_month3plus",
+              "title": "После трёх месяцев",
+              "period": "После 3-х месяцев",
+              "status": "todo",
+              "tasks": [
+                {
+                  "id": "t_equator_prep",
+                  "stage_id": "st_month3plus",
+                  "title": "Подготовься к экваторной встрече",
+                  "description": "Подготовь презентацию промежуточных результатов и согласуй её с наставником.",
+                  "status": "todo",
+                  "due_date": "2027-02-07",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_equator",
+                  "stage_id": "st_month3plus",
+                  "title": "Выступи на экваторной встрече",
+                  "description": "Представь промежуточные результаты стажировки.",
+                  "status": "todo",
+                  "due_date": "2027-02-17",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                },
+                {
+                  "id": "t_final_survey",
+                  "stage_id": "st_month3plus",
+                  "title": "Пройди опрос о стажировке",
+                  "description": "Расскажи, как прошла стажировка.",
+                  "status": "todo",
+                  "due_date": "2027-05-08",
+                  "links": [],
+                  "related_action_type": null,
+                  "related_action_id": null
+                }
+              ]
+            }
+          ],
+          "progress": 7,
+          "next_steps": [
+            {
+              "task_id": "t_join_channels",
+              "title": "Попроси добавить тебя в ключевые каналы и чаты",
+              "reason": "Задача уже в работе, срок — сегодня."
+            },
+            {
+              "task_id": "t_request_accesses",
+              "title": "Запроси доступы к рабочим инструментам",
+              "reason": "Срок — завтра. Без доступов не получится настроить окружение."
+            },
+            {
+              "task_id": "t_team_space",
+              "title": "Запроси доступ в пространство команды и изучи его",
+              "reason": "Срок — 13 ноября, до конца первой недели."
+            }
+          ]
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/Onboarding"
+    },
+    {
+      "name": "mentor_has_none",
+      "kind": "empty",
+      "description": "У наставника нет своего плана адаптации.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_igor>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "stages": [],
+          "progress": 0,
+          "next_steps": []
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/Onboarding"
+    }
+  ]
+}

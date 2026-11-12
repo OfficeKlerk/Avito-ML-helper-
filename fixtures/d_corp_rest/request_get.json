@@ -1,0 +1,140 @@
+{
+  "contract": "D",
+  "operation": "request_get",
+  "method": "GET",
+  "path": "/api/v1/requests/{request_id}",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "draft",
+      "kind": "success",
+      "description": "Свой черновик.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "request_id": "req_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "req_anna_dayoff_1",
+          "type": "absence_request",
+          "status": "draft",
+          "owner_id": "u_anna",
+          "team_id": "team_delivery",
+          "approver": {
+            "id": "u_olga",
+            "name": "Ольга Крылова"
+          },
+          "payload": {
+            "kind": "day_off",
+            "date_from": "2026-11-13",
+            "date_to": "2026-11-13",
+            "comment": "Личные дела"
+          },
+          "summary": "Отгул 13.11.2026",
+          "external_ref": null,
+          "fulfilled_at": null,
+          "created_at": "2026-11-11T10:02:00+03:00",
+          "updated_at": "2026-11-11T10:02:00+03:00"
+        }
+      },
+      "response_schema": "common.yaml#/components/schemas/CorpRequest"
+    },
+    {
+      "name": "submitted",
+      "kind": "success",
+      "description": "После отправки. Так core-api выясняет результат, если ответ на отправку потерялся.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "request_id": "req_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "req_anna_dayoff_1",
+          "type": "absence_request",
+          "status": "submitted",
+          "owner_id": "u_anna",
+          "team_id": "team_delivery",
+          "approver": {
+            "id": "u_olga",
+            "name": "Ольга Крылова"
+          },
+          "payload": {
+            "kind": "day_off",
+            "date_from": "2026-11-13",
+            "date_to": "2026-11-13",
+            "comment": "Личные дела"
+          },
+          "summary": "Отгул 13.11.2026",
+          "external_ref": "ABS-2026-000117",
+          "fulfilled_at": null,
+          "created_at": "2026-11-11T10:02:00+03:00",
+          "updated_at": "2026-11-11T10:03:10+03:00"
+        }
+      },
+      "response_schema": "common.yaml#/components/schemas/CorpRequest"
+    },
+    {
+      "name": "foreign",
+      "kind": "forbidden",
+      "description": "Чужая заявка.",
+      "match": {
+        "path_params": {
+          "request_id": "req_max_vacation_1"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "request_id": "req_max_vacation_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "forbidden",
+            "message": "Эта заявка принадлежит другому сотруднику."
+          }
+        }
+      }
+    },
+    {
+      "name": "unavailable",
+      "kind": "unavailable",
+      "description": "Сервис недоступен.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "request_id": "req_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "error": {
+            "code": "unavailable",
+            "message": "Сервис временно недоступен. Попробуй ещё раз чуть позже."
+          }
+        }
+      }
+    }
+  ]
+}

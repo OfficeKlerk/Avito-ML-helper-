@@ -1,0 +1,67 @@
+{
+  "contract": "A",
+  "operation": "action_cancel",
+  "method": "POST",
+  "path": "/api/actions/{action_id}/cancel",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "cancelled",
+      "kind": "success",
+      "description": "Отмена черновика.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "act_anna_dayoff_1",
+          "type": "absence_request",
+          "status": "cancelled",
+          "title": "Отгул 13.11.2026",
+          "fields": {
+            "Тип": "Отгул",
+            "Дата": "13.11.2026",
+            "Согласует": "Ольга Крылова",
+            "Комментарий": "Личные дела"
+          },
+          "external_id": "req_anna_dayoff_1",
+          "result": null,
+          "error": null,
+          "created_at": "2026-11-11T10:02:05+03:00",
+          "updated_at": "2026-11-11T10:04:00+03:00"
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ActionCard"
+    },
+    {
+      "name": "already_approved",
+      "kind": "conflict",
+      "description": "Согласованную заявку отменить нельзя.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "action_id": "act_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "conflict",
+            "message": "Заявка уже согласована, отменить её нельзя."
+          }
+        }
+      }
+    }
+  ]
+}

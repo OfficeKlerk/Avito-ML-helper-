@@ -1,0 +1,143 @@
+openapi: 3.1.0
+info:
+  title: "Контракт E: agent ↔ knowledge-service"
+  version: 0.1.0
+  description: >
+    Поиск по базе знаний с учётом прав. Сервис возвращает фрагменты документов, итоговый ответ
+    пользователю формирует agent.
+
+    Заголовки: `Authorization: Bearer <JWT пользователя>` — права берутся из токена
+    (роль и команда), а не из тела запроса; `X-Request-Id` — сквозной идентификатор запроса.
+
+    Недоступные пользователю документы исключаются ДО поиска и не влияют на выдачу.
+    Запрос документа по идентификатору проверяет те же права: чужой документ — 403 без метаданных.
+
+    Доступ к документу задаёт поле `visibility` (достаточно одного совпадения):
+    `public` — всем авторизованным; `team:<team_id>` — команде; `role:<role>` — роли.
+servers:
+  - url: http://localhost:8060
+security:
+  - bearer: []
+paths:
+  /health:
+    get:
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: Сервис работает
+          content:
+            application/json:
+              schema: { $ref: "common.yaml#/components/schemas/Health" }
+
+  /v1/search:
+    post:
+      operationId: search
+      summary: Найти разрешённые фрагменты документов
+      description: Для нерелевантного запроса возвращается 200 с пустым `results`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SearchRequest" }
+      responses:
+        "200":
+          description: Фрагменты по убыванию релевантности
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SearchResponse" }
+        "401": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /v1/documents/{doc_id}:
+    get:
+      operationId: document_get
+      summary: Документ целиком
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema: { $ref: "common.yaml#/components/schemas/DocId" }
+      responses:
+        "200":
+          description: Документ
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Document" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error:
+      description: Ошибка в едином формате
+      content:
+        application/json:
+          schema: { $ref: "common.yaml#/components/schemas/ErrorResponse" }
+  schemas:
+    SearchRequest:
+      type: object
+      required: [query]
+      additionalProperties: false
+      properties:
+        query: { type: string, minLength: 1, maxLength: 1000 }
+        top_k: { type: integer, minimum: 1, maximum: 10, default: 5 }
+    Chunk:
+      type: object
+      required: [source, text, score, updated_at, disclaimer]
+      additionalProperties: false
+      properties:
+        source:
+          description: Готовый источник — агент переносит его в ответ без изменений.
+          $ref: "common.yaml#/components/schemas/Source"
+        text:
+          description: Текст фрагмента.
+          type: string
+          minLength: 1
+        score:
+          description: Релевантность, больше — лучше. Сравнимо только внутри одного ответа.
+          type: number
+          minimum: 0
+        updated_at: { type: string, format: date }
+        disclaimer:
+          description: Пометка тестовой инструкции.
+          type: string
+    SearchResponse:
+      type: object
+      required: [results]
+      additionalProperties: false
+      properties:
+        results:
+          type: array
+          maxItems: 10
+          items: { $ref: "#/components/schemas/Chunk" }
+    Visibility:
+      type: string
+      pattern: "^(public|team:team_[a-z0-9_]+|role:(intern|mentor|manager|hr))$"
+    Document:
+      type: object
+      required: [doc_id, title, visibility, tags, updated_at, disclaimer, text]
+      additionalProperties: false
+      properties:
+        doc_id: { $ref: "common.yaml#/components/schemas/DocId" }
+        title: { type: string }
+        visibility:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/Visibility" }
+        tags:
+          type: array
+          items: { type: string }
+        updated_at: { type: string, format: date }
+        disclaimer: { type: string }
+        text:
+          description: Текст документа, Markdown, без служебной шапки.
+          type: string

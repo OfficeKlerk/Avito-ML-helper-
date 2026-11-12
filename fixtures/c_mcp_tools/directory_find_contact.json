@@ -1,0 +1,57 @@
+{
+  "contract": "C",
+  "operation": "directory_find_contact",
+  "tool": "directory_find_contact",
+  "request_schema": "c_mcp_tools.yaml#/components/schemas/FindContactInput",
+  "cases": [
+    {
+      "name": "absence_contact",
+      "kind": "success",
+      "description": "Кто согласует отгулы в команде пользователя.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {
+          "topic": "absence"
+        }
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "topic": "absence",
+          "contacts": [
+            {
+              "id": "u_olga",
+              "name": "Ольга Крылова",
+              "role_title": "Руководитель команды, согласует отгулы и отпуска",
+              "channel": "личные сообщения"
+            }
+          ]
+        }
+      },
+      "response_schema": "c_mcp_tools.yaml#/components/schemas/ContactList"
+    },
+    {
+      "name": "no_contact",
+      "kind": "empty",
+      "description": "По теме нет контакта, доступного пользователю.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_elena>"
+        },
+        "arguments": {
+          "topic": "accesses"
+        }
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "topic": "accesses",
+          "contacts": []
+        }
+      },
+      "response_schema": "c_mcp_tools.yaml#/components/schemas/ContactList"
+    }
+  ]
+}

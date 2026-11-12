@@ -1,0 +1,70 @@
+{
+  "contract": "D",
+  "operation": "request_approve",
+  "method": "POST",
+  "path": "/api/v1/requests/{request_id}/approve",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "access_granted",
+      "kind": "success",
+      "description": "Руководитель согласует заявку на доступ: доступ выдан, fulfilled_at заполнен.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_olga>"
+        },
+        "path_params": {
+          "request_id": "req_anna_jira_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "req_anna_jira_1",
+          "type": "access_request",
+          "status": "approved",
+          "owner_id": "u_anna",
+          "team_id": "team_delivery",
+          "approver": {
+            "id": "u_olga",
+            "name": "Ольга Крылова"
+          },
+          "payload": {
+            "system": "jira",
+            "reason": "Нужен для работы с задачами команды"
+          },
+          "summary": "Доступ к Jira",
+          "external_ref": "ACC-2026-000342",
+          "fulfilled_at": "2026-11-11T12:00:00+03:00",
+          "created_at": "2026-11-10T11:30:00+03:00",
+          "updated_at": "2026-11-11T12:00:00+03:00"
+        }
+      },
+      "response_schema": "common.yaml#/components/schemas/CorpRequest"
+    },
+    {
+      "name": "own_request",
+      "kind": "forbidden",
+      "description": "Стажёр не может согласовать собственную заявку.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "request_id": "req_anna_jira_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "forbidden",
+            "message": "Согласовать заявку может только руководитель команды."
+          }
+        }
+      }
+    }
+  ]
+}

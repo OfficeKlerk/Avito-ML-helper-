@@ -1,0 +1,82 @@
+{
+  "contract": "A",
+  "operation": "actions_list",
+  "method": "GET",
+  "path": "/api/actions",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "two_cards",
+      "kind": "success",
+      "description": "Черновик отгула и отправленная заявка на доступ.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "actions": [
+            {
+              "id": "act_anna_dayoff_1",
+              "type": "absence_request",
+              "status": "draft",
+              "title": "Отгул 13.11.2026",
+              "fields": {
+                "Тип": "Отгул",
+                "Дата": "13.11.2026",
+                "Согласует": "Ольга Крылова",
+                "Комментарий": "Личные дела"
+              },
+              "external_id": "req_anna_dayoff_1",
+              "result": null,
+              "error": null,
+              "created_at": "2026-11-11T10:02:05+03:00",
+              "updated_at": "2026-11-11T10:02:05+03:00"
+            },
+            {
+              "id": "act_anna_jira_1",
+              "type": "access_request",
+              "status": "submitted",
+              "title": "Доступ к Jira",
+              "fields": {
+                "Система": "Jira",
+                "Зачем": "Нужен для работы с задачами команды",
+                "Согласует": "Ольга Крылова"
+              },
+              "external_id": "req_anna_jira_1",
+              "result": {
+                "message": "Заявка отправлена на согласование.",
+                "external_ref": "ACC-2026-000342"
+              },
+              "error": null,
+              "created_at": "2026-11-10T11:30:10+03:00",
+              "updated_at": "2026-11-10T11:31:00+03:00"
+            }
+          ]
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ActionCardList"
+    },
+    {
+      "name": "no_actions",
+      "kind": "empty",
+      "description": "Действий ещё не было.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "actions": []
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ActionCardList"
+    }
+  ]
+}

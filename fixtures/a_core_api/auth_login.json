@@ -1,0 +1,96 @@
+{
+  "contract": "A",
+  "operation": "auth_login",
+  "method": "POST",
+  "path": "/api/auth/login",
+  "request_schema": "a_core_api.yaml#/components/schemas/LoginRequest",
+  "cases": [
+    {
+      "name": "anna",
+      "kind": "success",
+      "description": "Стажёр Анна входит с тестовым паролем.",
+      "request": {
+        "headers": {},
+        "body": {
+          "login": "intern_anna",
+          "password": "buddy2026"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "token": "<jwt:u_anna>",
+          "user": {
+            "id": "u_anna",
+            "login": "intern_anna",
+            "name": "Анна Соколова",
+            "role": "intern",
+            "team": {
+              "id": "team_delivery",
+              "name": "Авито Доставка"
+            },
+            "mentor": {
+              "id": "u_igor",
+              "name": "Игорь Белов"
+            },
+            "manager": {
+              "id": "u_olga",
+              "name": "Ольга Крылова"
+            },
+            "start_date": "2026-11-09",
+            "internship_week": 1,
+            "program": "6m"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/LoginResponse"
+    },
+    {
+      "name": "wrong_password",
+      "kind": "forbidden",
+      "description": "Неверный пароль — 401, без подсказки, существует ли логин.",
+      "match": {
+        "body": {
+          "password": "wrong-password"
+        }
+      },
+      "request": {
+        "headers": {},
+        "body": {
+          "login": "intern_anna",
+          "password": "wrong-password"
+        }
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthorized",
+            "message": "Неверный логин или пароль."
+          }
+        }
+      }
+    },
+    {
+      "name": "empty_login",
+      "kind": "validation",
+      "description": "Пустой логин не проходит проверку.",
+      "request": {
+        "headers": {},
+        "body": {
+          "login": "",
+          "password": "buddy2026"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Укажи логин и пароль."
+          }
+        }
+      }
+    }
+  ]
+}

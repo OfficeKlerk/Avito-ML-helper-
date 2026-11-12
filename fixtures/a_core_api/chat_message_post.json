@@ -1,0 +1,352 @@
+{
+  "contract": "A",
+  "operation": "chat_message_post",
+  "method": "POST",
+  "path": "/api/chat/messages",
+  "request_schema": "a_core_api.yaml#/components/schemas/ChatMessagePost",
+  "cases": [
+    {
+      "name": "next_steps",
+      "kind": "success",
+      "description": "Вопрос «что делать дальше» — следующие шаги адаптации.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "text": "Что мне делать дальше?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Что мне делать дальше?",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "Сейчас у тебя первая неделя. Вот что стоит сделать в первую очередь:\n\n1. **Попроси добавить тебя в ключевые каналы и чаты** — задача уже в работе, срок сегодня.\n2. **Запроси доступы к рабочим инструментам** — срок завтра, без них не настроить окружение.\n3. **Запроси доступ в пространство команды** — срок 13 ноября.",
+            "sources": [],
+            "actions": [],
+            "suggestions": [
+              "Каких доступов мне не хватает?",
+              "Как оформить отгул?"
+            ],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "absence_draft",
+      "kind": "success",
+      "description": "Отгул с датой — инструкция с источником и карточка черновика.",
+      "match": {
+        "body": {
+          "text": "пятниц"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "text": "Хочу взять отгул в пятницу"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Хочу взять отгул в пятницу",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "Отгул оформляется так: предупреди наставника и руководителя, создай заявку и дождись согласования.\n\nЯ подготовил черновик заявки на **пятницу, 13 ноября**. Проверь его и подтверди — тогда заявка уйдёт на согласование Ольге Крыловой. И не забудь заранее предупредить Игоря и Ольгу.",
+            "sources": [
+              {
+                "doc_id": "kb_absence_rules",
+                "chunk_id": "kb_absence_rules#day-off",
+                "title": "Как оформить отгул или отпуск",
+                "section": "Отгул"
+              }
+            ],
+            "actions": [
+              {
+                "id": "act_anna_dayoff_1",
+                "type": "absence_request",
+                "status": "draft",
+                "title": "Отгул 13.11.2026",
+                "fields": {
+                  "Тип": "Отгул",
+                  "Дата": "13.11.2026",
+                  "Согласует": "Ольга Крылова",
+                  "Комментарий": "Личные дела"
+                },
+                "external_id": "req_anna_dayoff_1",
+                "result": null,
+                "error": null,
+                "created_at": "2026-11-11T10:02:05+03:00",
+                "updated_at": "2026-11-11T10:02:05+03:00"
+              }
+            ],
+            "suggestions": [
+              "Что ещё сделать на этой неделе?"
+            ],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "absence_clarify",
+      "kind": "success",
+      "description": "Отгул без даты — помощник уточняет дату.",
+      "match": {
+        "body": {
+          "text": "отгул"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "text": "Как оформить отгул?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Как оформить отгул?",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "Помогу оформить отгул. На какую дату он нужен? Если дней несколько — напиши первый и последний.",
+            "sources": [
+              {
+                "doc_id": "kb_absence_rules",
+                "chunk_id": "kb_absence_rules#day-off",
+                "title": "Как оформить отгул или отпуск",
+                "section": "Отгул"
+              }
+            ],
+            "actions": [],
+            "suggestions": [
+              "Завтра",
+              "В пятницу"
+            ],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "kb_answer",
+      "kind": "success",
+      "description": "Вопрос о команде — ответ с источником из документа команды.",
+      "match": {
+        "body": {
+          "text": "стендап"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "text": "Во сколько у нас стендап?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Во сколько у нас стендап?",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "Стендап в команде Авито Доставка проходит каждый рабочий день в 11:00 и длится 15 минут. Формат: что сделал вчера, что планируешь сегодня, что мешает. В первую неделю достаточно рассказать, что изучаешь.",
+            "sources": [
+              {
+                "doc_id": "kb_delivery_rituals",
+                "chunk_id": "kb_delivery_rituals#standup",
+                "title": "Ритуалы команды Авито Доставка",
+                "section": "Ежедневный стендап"
+              }
+            ],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "no_answer",
+      "kind": "empty",
+      "description": "В базе знаний нет ответа — помощник честно говорит и называет контакт.",
+      "match": {
+        "body": {
+          "text": "парковк"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "text": "Где у нас парковка?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Где у нас парковка?",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "В базе знаний я не нашёл ответа на этот вопрос. Лучше спросить куратора стажировки — Елену Громову, канал #interns-2026.",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "agent_degraded",
+      "kind": "degraded",
+      "description": "Агент недоступен — 200 и ответ в упрощённом режиме, не 5xx.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "text": "Что мне делать дальше?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Что мне делать дальше?",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "Сейчас я работаю в упрощённом режиме и могу ответить не на всё. Вот твои ближайшие шаги:\n\n1. Попроси добавить тебя в ключевые каналы и чаты.\n2. Запроси доступы к рабочим инструментам.",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "degraded",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "no_token",
+      "kind": "forbidden",
+      "description": "Запрос без токена.",
+      "request": {
+        "headers": {},
+        "body": {
+          "text": "Привет"
+        }
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthorized",
+            "message": "Нужно войти заново."
+          }
+        }
+      }
+    },
+    {
+      "name": "empty_text",
+      "kind": "validation",
+      "description": "Пустое сообщение.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "text": ""
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Сообщение не может быть пустым."
+          }
+        }
+      }
+    }
+  ]
+}

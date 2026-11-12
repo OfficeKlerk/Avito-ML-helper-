@@ -1,0 +1,7 @@
+[
+  { "topic": "accesses", "team_id": "team_delivery", "id": "u_igor", "name": "Игорь Белов", "role_title": "Наставник, подскажет по доступам команды", "channel": "#delivery-onboarding" },
+  { "topic": "accesses", "team_id": "team_auto", "id": "u_dina", "name": "Дина Ахметова", "role_title": "Наставник, подскажет по доступам команды", "channel": "#auto-onboarding" },
+  { "topic": "absence", "team_id": "team_delivery", "id": "u_olga", "name": "Ольга Крылова", "role_title": "Руководитель команды, согласует отгулы и отпуска", "channel": "личные сообщения" },
+  { "topic": "absence", "team_id": "team_auto", "id": "u_pavel", "name": "Павел Зимин", "role_title": "Руководитель команды, согласует отгулы и отпуска", "channel": "личные сообщения" },
+  { "topic": "onboarding", "team_id": null, "id": "u_elena", "name": "Елена Громова", "role_title": "Куратор стажировки", "channel": "#interns-2026" }
+]

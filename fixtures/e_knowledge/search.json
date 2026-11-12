@@ -1,0 +1,202 @@
+{
+  "contract": "E",
+  "operation": "search",
+  "method": "POST",
+  "path": "/v1/search",
+  "request_schema": "e_knowledge.yaml#/components/schemas/SearchRequest",
+  "cases": [
+    {
+      "name": "absence",
+      "kind": "success",
+      "description": "Запрос про отгул: два фрагмента общего документа.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "query": "как оформить отгул",
+          "top_k": 3
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "results": [
+            {
+              "source": {
+                "doc_id": "kb_absence_rules",
+                "chunk_id": "kb_absence_rules#day-off",
+                "title": "Как оформить отгул или отпуск",
+                "section": "Отгул"
+              },
+              "text": "Отгул — это один или два дня отсутствия по личным делам. Заявку нужно подать не позже чем за один рабочий день до отгула. 1. Заранее предупреди наставника и руководителя команды. 2. Создай заявку на отгул в сервисе отсутствий. 3. Дождись согласования. Отгул согласует руководитель команды. 4. Отметь отсутствие в календаре команды.",
+              "score": 7.42,
+              "updated_at": "2026-11-02",
+              "disclaimer": "Тестовая инструкция, не является регламентом Авито"
+            },
+            {
+              "source": {
+                "doc_id": "kb_absence_rules",
+                "chunk_id": "kb_absence_rules#vacation",
+                "title": "Как оформить отгул или отпуск",
+                "section": "Отпуск"
+              },
+              "text": "Отпуск стажёра — до 14 календарных дней подряд. Даты обсуждают с руководителем не позже чем за две недели до начала.",
+              "score": 3.1,
+              "updated_at": "2026-11-02",
+              "disclaimer": "Тестовая инструкция, не является регламентом Авито"
+            }
+          ]
+        }
+      },
+      "response_schema": "e_knowledge.yaml#/components/schemas/SearchResponse"
+    },
+    {
+      "name": "team_document",
+      "kind": "success",
+      "description": "Запрос про стендап: фрагмент документа команды пользователя.",
+      "match": {
+        "body": {
+          "query": "стендап"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "query": "во сколько стендап"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "results": [
+            {
+              "source": {
+                "doc_id": "kb_delivery_rituals",
+                "chunk_id": "kb_delivery_rituals#standup",
+                "title": "Ритуалы команды Авито Доставка",
+                "section": "Ежедневный стендап"
+              },
+              "text": "Каждый рабочий день в 11:00, 15 минут. Формат: что сделал вчера, что планируешь сегодня, что мешает. Стажёр участвует с первого дня — в первую неделю достаточно рассказать, что изучаешь.",
+              "score": 6.05,
+              "updated_at": "2026-11-01",
+              "disclaimer": "Тестовая инструкция, не является регламентом Авито"
+            }
+          ]
+        }
+      },
+      "response_schema": "e_knowledge.yaml#/components/schemas/SearchResponse"
+    },
+    {
+      "name": "other_team_hidden",
+      "kind": "empty",
+      "description": "Макс из другой команды: документ Доставки исключён до поиска, выдача пуста.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_max>"
+        },
+        "body": {
+          "query": "во сколько стендап в доставке"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "results": []
+        }
+      },
+      "response_schema": "e_knowledge.yaml#/components/schemas/SearchResponse"
+    },
+    {
+      "name": "irrelevant",
+      "kind": "empty",
+      "description": "Нерелевантный запрос.",
+      "match": {
+        "body": {
+          "query": "парковк"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "query": "где парковка"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "results": []
+        }
+      },
+      "response_schema": "e_knowledge.yaml#/components/schemas/SearchResponse"
+    },
+    {
+      "name": "no_token",
+      "kind": "forbidden",
+      "description": "Запрос без токена.",
+      "request": {
+        "headers": {},
+        "body": {
+          "query": "отгул"
+        }
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthorized",
+            "message": "Нужно войти заново."
+          }
+        }
+      }
+    },
+    {
+      "name": "empty_query",
+      "kind": "validation",
+      "description": "Пустой запрос.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "query": ""
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Запрос не может быть пустым."
+          }
+        }
+      }
+    },
+    {
+      "name": "unavailable",
+      "kind": "unavailable",
+      "description": "Сервис недоступен.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "query": "отгул"
+        }
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "error": {
+            "code": "unavailable",
+            "message": "Сервис временно недоступен. Попробуй ещё раз чуть позже."
+          }
+        }
+      }
+    }
+  ]
+}

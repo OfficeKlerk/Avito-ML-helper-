@@ -1,0 +1,70 @@
+{
+  "contract": "A",
+  "operation": "onboarding_task_patch",
+  "method": "PATCH",
+  "path": "/api/onboarding/tasks/{task_id}",
+  "request_schema": "a_core_api.yaml#/components/schemas/TaskPatch",
+  "cases": [
+    {
+      "name": "done",
+      "kind": "success",
+      "description": "Анна отмечает задачу выполненной.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "task_id": "t_join_channels"
+        },
+        "body": {
+          "status": "done"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "t_join_channels",
+          "stage_id": "st_week1",
+          "title": "Попроси добавить тебя в ключевые каналы и чаты",
+          "description": "Попроси наставника добавить тебя во все рабочие каналы команды, в том числе закрытые.",
+          "status": "done",
+          "due_date": "2026-11-11",
+          "links": [],
+          "related_action_type": null,
+          "related_action_id": null
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/Task"
+    },
+    {
+      "name": "bad_status",
+      "kind": "validation",
+      "description": "Неизвестный статус.",
+      "match": {
+        "body": {
+          "status": "finished"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "task_id": "t_join_channels"
+        },
+        "body": {
+          "status": "finished"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Такого статуса задачи нет."
+          }
+        }
+      }
+    }
+  ]
+}

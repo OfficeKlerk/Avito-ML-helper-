@@ -1,0 +1,17 @@
+{
+  "systems": [
+    { "system": "confluence", "title": "Confluence" },
+    { "system": "jira", "title": "Jira" },
+    { "system": "gitlab", "title": "GitLab" },
+    { "system": "vpn", "title": "VPN" },
+    { "system": "team_space", "title": "Пространство команды" }
+  ],
+  "required_by_team": {
+    "team_delivery": ["confluence", "jira", "gitlab", "vpn", "team_space"],
+    "team_auto": ["confluence", "jira", "gitlab", "team_space"]
+  },
+  "user_accesses": {
+    "u_anna": { "confluence": "granted", "vpn": "granted", "jira": "pending", "gitlab": "missing", "team_space": "missing" },
+    "u_max": { "confluence": "granted", "jira": "granted", "gitlab": "granted", "team_space": "granted", "vpn": "missing" }
+  }
+}

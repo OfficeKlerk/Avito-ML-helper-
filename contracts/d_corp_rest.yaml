@@ -1,0 +1,137 @@
+openapi: 3.1.0
+info:
+  title: "Контракт D: core-api ↔ corp-mock (REST)"
+  version: 0.1.0
+  description: >
+    Через REST core-api отправляет заявку после подтверждения пользователем, отменяет её и читает статус.
+    Черновики создаёт агент через MCP (контракт C).
+
+    Заголовки: `Authorization: Bearer <JWT пользователя>` — corp-mock проверяет права на каждую операцию;
+    `X-Request-Id` — сквозной идентификатор запроса.
+
+    Переходы статусов: draft → submitted → approved | rejected; draft | submitted → cancelled.
+    Недопустимый переход — 409 `conflict`.
+
+    Чужая заявка: 403 `forbidden`. Стажёр не может согласовать собственную заявку.
+servers:
+  - url: http://localhost:8070
+security:
+  - bearer: []
+paths:
+  /health:
+    get:
+      operationId: health
+      security: []
+      responses:
+        "200":
+          description: Сервис работает
+          content:
+            application/json:
+              schema: { $ref: "common.yaml#/components/schemas/Health" }
+
+  /api/v1/requests/{request_id}:
+    get:
+      operationId: request_get
+      summary: Текущее состояние заявки
+      description: >
+        Этим же запросом core-api выясняет результат, если ответ на отправку потерялся:
+        статус `submitted` означает, что отправка состоялась и повторять её не нужно.
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200": { $ref: "#/components/responses/Request" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /api/v1/requests/{request_id}/submit:
+    post:
+      operationId: request_submit
+      summary: Отправить черновик на согласование
+      description: >
+        Идемпотентно: повтор с тем же `Idempotency-Key`, как и повтор для уже отправленной заявки,
+        возвращает 200 с текущим состоянием и не создаёт вторую заявку.
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+        - $ref: "#/components/parameters/IdempotencyKey"
+      responses:
+        "200": { $ref: "#/components/responses/Request" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /api/v1/requests/{request_id}/cancel:
+    post:
+      operationId: request_cancel
+      summary: Отменить черновик или отправленную заявку
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200": { $ref: "#/components/responses/Request" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /api/v1/requests/{request_id}/approve:
+    post:
+      operationId: request_approve
+      summary: Согласовать заявку (руководитель команды; волна 2)
+      description: >
+        Для заявки на доступ согласование сразу выдаёт доступ и заполняет `fulfilled_at`.
+        Этот же запрос — управляемый способ пройти переход в тестах.
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200": { $ref: "#/components/responses/Request" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+  /api/v1/requests/{request_id}/reject:
+    post:
+      operationId: request_reject
+      summary: Отклонить заявку (руководитель команды; волна 2)
+      parameters:
+        - $ref: "#/components/parameters/RequestId"
+      responses:
+        "200": { $ref: "#/components/responses/Request" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    RequestId:
+      name: request_id
+      in: path
+      required: true
+      schema: { $ref: "common.yaml#/components/schemas/RequestId" }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128 }
+  responses:
+    Request:
+      description: Заявка
+      content:
+        application/json:
+          schema: { $ref: "common.yaml#/components/schemas/CorpRequest" }
+    Error:
+      description: Ошибка в едином формате
+      content:
+        application/json:
+          schema: { $ref: "common.yaml#/components/schemas/ErrorResponse" }

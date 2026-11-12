@@ -1,0 +1,67 @@
+{
+  "contract": "C",
+  "operation": "absence_list_my",
+  "tool": "absence_list_my",
+  "request_schema": "c_mcp_tools.yaml#/components/schemas/EmptyInput",
+  "cases": [
+    {
+      "name": "one_draft",
+      "kind": "success",
+      "description": "У пользователя один черновик.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {}
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "requests": [
+            {
+              "id": "req_anna_dayoff_1",
+              "type": "absence_request",
+              "status": "draft",
+              "owner_id": "u_anna",
+              "team_id": "team_delivery",
+              "approver": {
+                "id": "u_olga",
+                "name": "Ольга Крылова"
+              },
+              "payload": {
+                "kind": "day_off",
+                "date_from": "2026-11-13",
+                "date_to": "2026-11-13",
+                "comment": "Личные дела"
+              },
+              "summary": "Отгул 13.11.2026",
+              "external_ref": null,
+              "fulfilled_at": null,
+              "created_at": "2026-11-11T10:02:00+03:00",
+              "updated_at": "2026-11-11T10:02:00+03:00"
+            }
+          ]
+        }
+      },
+      "response_schema": "c_mcp_tools.yaml#/components/schemas/RequestList"
+    },
+    {
+      "name": "none",
+      "kind": "empty",
+      "description": "Заявок на отсутствие нет.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {}
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "requests": []
+        }
+      },
+      "response_schema": "c_mcp_tools.yaml#/components/schemas/RequestList"
+    }
+  ]
+}

@@ -1,0 +1,211 @@
+# Контракт C: agent ↔ corp-mock (MCP-инструменты)
+#
+# Транспорт: MCP streamable HTTP, адрес `{CORP_MOCK_URL}/mcp`.
+# Авторизация: заголовок `Authorization: Bearer <JWT пользователя>` на каждый вызов.
+# corp-mock сам проверяет права: стажёр видит и меняет только своё.
+#
+# Через MCP агент только ЧИТАЕТ данные и создаёт ЧЕРНОВИКИ. Отправку заявки делает core-api
+# после подтверждения пользователем (контракт D).
+#
+# Результат инструмента — объект в `structuredContent` (и он же строкой JSON в `content[0].text`).
+# Ошибка — `isError: true` и объект `common.yaml#/components/schemas/ErrorResponse`
+# с кодами forbidden | not_found | validation | conflict | unavailable.
+#
+# `idempotency_key` в *_create_draft: повтор вызова с тем же ключом возвращает тот же черновик.
+# Агент выводит ключ из `request_id` запроса (контракт B) и имени инструмента.
+
+contract: C
+transport: streamable-http
+endpoint: /mcp
+
+tools:
+  - name: directory_get_me
+    wave: 1
+    description: Профиль текущего пользователя — команда, наставник и руководитель.
+    input: { $ref: "#/components/schemas/EmptyInput" }
+    output: { $ref: "#/components/schemas/Profile" }
+
+  - name: directory_find_contact
+    wave: 1
+    description: Кто отвечает за тему (доступы, отгулы, адаптация) для текущего пользователя.
+    input: { $ref: "#/components/schemas/FindContactInput" }
+    output: { $ref: "#/components/schemas/ContactList" }
+
+  - name: absence_get_rules
+    wave: 1
+    description: Тестовые правила оформления отгула и отпуска.
+    input: { $ref: "#/components/schemas/EmptyInput" }
+    output: { $ref: "#/components/schemas/AbsenceRules" }
+
+  - name: absence_list_my
+    wave: 1
+    description: Заявки текущего пользователя на отсутствие и их статусы.
+    input: { $ref: "#/components/schemas/EmptyInput" }
+    output: { $ref: "#/components/schemas/RequestList" }
+
+  - name: absence_create_draft
+    wave: 1
+    description: >
+      Создать черновик заявки на отгул или отпуск. Заявка не отправляется:
+      пользователь подтверждает её отдельно.
+    input: { $ref: "#/components/schemas/AbsenceCreateDraftInput" }
+    output: { $ref: "common.yaml#/components/schemas/CorpRequest" }
+
+  - name: access_list_my
+    wave: 2
+    description: Доступы текущего пользователя — какие нужны его команде и какие уже есть.
+    input: { $ref: "#/components/schemas/EmptyInput" }
+    output: { $ref: "#/components/schemas/AccessList" }
+
+  - name: access_create_draft
+    wave: 2
+    description: >
+      Создать черновик заявки на доступ к системе. Заявка не отправляется:
+      пользователь подтверждает её отдельно.
+    input: { $ref: "#/components/schemas/AccessCreateDraftInput" }
+    output: { $ref: "common.yaml#/components/schemas/CorpRequest" }
+
+components:
+  schemas:
+    EmptyInput:
+      type: object
+      additionalProperties: false
+      properties: {}
+
+    Profile:
+      type: object
+      required: [id, name, role, team, mentor, manager]
+      additionalProperties: false
+      properties:
+        id: { $ref: "common.yaml#/components/schemas/UserId" }
+        name: { type: string }
+        role: { $ref: "common.yaml#/components/schemas/Role" }
+        team:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/TeamRef" }
+            - { type: "null" }
+        mentor:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/PersonRef" }
+            - { type: "null" }
+        manager:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/PersonRef" }
+            - { type: "null" }
+
+    ContactTopic:
+      type: string
+      enum: [accesses, absence, onboarding]
+    FindContactInput:
+      type: object
+      required: [topic]
+      additionalProperties: false
+      properties:
+        topic: { $ref: "#/components/schemas/ContactTopic" }
+    Contact:
+      type: object
+      required: [id, name, role_title, channel]
+      additionalProperties: false
+      properties:
+        id:
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/UserId" }
+            - { type: "null" }
+        name: { type: string }
+        role_title: { type: string }
+        channel:
+          description: Где писать — канал или личные сообщения.
+          type: [string, "null"]
+    ContactList:
+      type: object
+      required: [topic, contacts]
+      additionalProperties: false
+      properties:
+        topic: { $ref: "#/components/schemas/ContactTopic" }
+        contacts:
+          description: Пусто, если по теме нет контакта, доступного пользователю.
+          type: array
+          items: { $ref: "#/components/schemas/Contact" }
+
+    AbsenceRule:
+      type: object
+      required: [kind, title, max_days, min_notice_days, approver_role, steps]
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [day_off, vacation] }
+        title: { type: string }
+        max_days: { type: integer, minimum: 1 }
+        min_notice_days:
+          description: За сколько дней до начала нужно подать заявку.
+          type: integer
+          minimum: 0
+        approver_role: { $ref: "common.yaml#/components/schemas/Role" }
+        steps:
+          type: array
+          items: { type: string }
+    AbsenceRules:
+      type: object
+      required: [rules, disclaimer]
+      additionalProperties: false
+      properties:
+        rules:
+          type: array
+          items: { $ref: "#/components/schemas/AbsenceRule" }
+        disclaimer: { type: string }
+
+    RequestList:
+      type: object
+      required: [requests]
+      additionalProperties: false
+      properties:
+        requests:
+          type: array
+          items: { $ref: "common.yaml#/components/schemas/CorpRequest" }
+
+    AbsenceCreateDraftInput:
+      type: object
+      required: [kind, date_from, date_to, idempotency_key]
+      additionalProperties: false
+      properties:
+        kind: { type: string, enum: [day_off, vacation] }
+        date_from: { type: string, format: date }
+        date_to: { type: string, format: date }
+        comment: { type: string, maxLength: 500 }
+        idempotency_key: { type: string, minLength: 8, maxLength: 128 }
+
+    AccessItem:
+      type: object
+      required: [system, title, required, status, request_id]
+      additionalProperties: false
+      properties:
+        system: { $ref: "common.yaml#/components/schemas/AccessSystem" }
+        title: { type: string }
+        required:
+          description: Обязателен ли доступ для команды пользователя.
+          type: boolean
+        status:
+          description: granted — доступ есть; pending — заявка отправлена, доступа ещё нет; missing — нет ни доступа, ни заявки.
+          type: string
+          enum: [granted, pending, missing]
+        request_id:
+          description: Последняя заявка на этот доступ, если была.
+          oneOf:
+            - { $ref: "common.yaml#/components/schemas/RequestId" }
+            - { type: "null" }
+    AccessList:
+      type: object
+      required: [accesses]
+      additionalProperties: false
+      properties:
+        accesses:
+          type: array
+          items: { $ref: "#/components/schemas/AccessItem" }
+
+    AccessCreateDraftInput:
+      type: object
+      required: [system, reason, idempotency_key]
+      additionalProperties: false
+      properties:
+        system: { $ref: "common.yaml#/components/schemas/AccessSystem" }
+        reason: { type: string, minLength: 3, maxLength: 500 }
+        idempotency_key: { type: string, minLength: 8, maxLength: 128 }

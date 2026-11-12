@@ -1,0 +1,63 @@
+{
+  "contract": "A",
+  "operation": "me",
+  "method": "GET",
+  "path": "/api/me",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "anna",
+      "kind": "success",
+      "description": "Профиль стажёра первой недели.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "u_anna",
+          "login": "intern_anna",
+          "name": "Анна Соколова",
+          "role": "intern",
+          "team": {
+            "id": "team_delivery",
+            "name": "Авито Доставка"
+          },
+          "mentor": {
+            "id": "u_igor",
+            "name": "Игорь Белов"
+          },
+          "manager": {
+            "id": "u_olga",
+            "name": "Ольга Крылова"
+          },
+          "start_date": "2026-11-09",
+          "internship_week": 1,
+          "program": "6m"
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/User"
+    },
+    {
+      "name": "no_token",
+      "kind": "forbidden",
+      "description": "Запрос без токена.",
+      "request": {
+        "headers": {},
+        "body": null
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthorized",
+            "message": "Нужно войти заново."
+          }
+        }
+      }
+    }
+  ]
+}

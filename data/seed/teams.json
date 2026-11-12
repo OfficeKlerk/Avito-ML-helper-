@@ -1,0 +1,4 @@
+[
+  { "id": "team_delivery", "name": "Авито Доставка", "direction": "backend" },
+  { "id": "team_auto", "name": "Авто", "direction": "frontend" }
+]

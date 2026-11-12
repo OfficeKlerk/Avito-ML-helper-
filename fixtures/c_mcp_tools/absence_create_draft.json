@@ -1,0 +1,134 @@
+{
+  "contract": "C",
+  "operation": "absence_create_draft",
+  "tool": "absence_create_draft",
+  "request_schema": "c_mcp_tools.yaml#/components/schemas/AbsenceCreateDraftInput",
+  "cases": [
+    {
+      "name": "draft_created",
+      "kind": "success",
+      "description": "Черновик отгула создан. Повтор с тем же idempotency_key возвращает его же.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {
+          "kind": "day_off",
+          "date_from": "2026-11-13",
+          "date_to": "2026-11-13",
+          "comment": "Личные дела",
+          "idempotency_key": "rq-20261111-0001:absence_create_draft"
+        }
+      },
+      "response": {
+        "is_error": false,
+        "body": {
+          "id": "req_anna_dayoff_1",
+          "type": "absence_request",
+          "status": "draft",
+          "owner_id": "u_anna",
+          "team_id": "team_delivery",
+          "approver": {
+            "id": "u_olga",
+            "name": "Ольга Крылова"
+          },
+          "payload": {
+            "kind": "day_off",
+            "date_from": "2026-11-13",
+            "date_to": "2026-11-13",
+            "comment": "Личные дела"
+          },
+          "summary": "Отгул 13.11.2026",
+          "external_ref": null,
+          "fulfilled_at": null,
+          "created_at": "2026-11-11T10:02:00+03:00",
+          "updated_at": "2026-11-11T10:02:00+03:00"
+        }
+      },
+      "response_schema": "common.yaml#/components/schemas/CorpRequest"
+    },
+    {
+      "name": "date_in_past",
+      "kind": "validation",
+      "description": "Дата в прошлом.",
+      "match": {
+        "body": {
+          "date_from": "2026-11-02"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {
+          "kind": "day_off",
+          "date_from": "2026-11-02",
+          "date_to": "2026-11-02",
+          "comment": "Личные дела",
+          "idempotency_key": "rq-20261111-0001:absence_create_draft"
+        }
+      },
+      "response": {
+        "is_error": true,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Дата отгула уже прошла. Выбери сегодняшний день или позже."
+          }
+        }
+      }
+    },
+    {
+      "name": "not_in_team",
+      "kind": "forbidden",
+      "description": "Заявку на отсутствие создаёт только сотрудник команды.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_elena>"
+        },
+        "arguments": {
+          "kind": "day_off",
+          "date_from": "2026-11-13",
+          "date_to": "2026-11-13",
+          "comment": "Личные дела",
+          "idempotency_key": "rq-20261111-0001:absence_create_draft"
+        }
+      },
+      "response": {
+        "is_error": true,
+        "body": {
+          "error": {
+            "code": "forbidden",
+            "message": "Оформить отсутствие может только сотрудник команды."
+          }
+        }
+      }
+    },
+    {
+      "name": "unavailable",
+      "kind": "unavailable",
+      "description": "Сервис недоступен: черновик НЕ создан.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "arguments": {
+          "kind": "day_off",
+          "date_from": "2026-11-13",
+          "date_to": "2026-11-13",
+          "comment": "Личные дела",
+          "idempotency_key": "rq-20261111-0001:absence_create_draft"
+        }
+      },
+      "response": {
+        "is_error": true,
+        "body": {
+          "error": {
+            "code": "unavailable",
+            "message": "Сервис временно недоступен. Попробуй ещё раз чуть позже."
+          }
+        }
+      }
+    }
+  ]
+}

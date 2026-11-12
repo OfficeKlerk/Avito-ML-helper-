@@ -1,0 +1,72 @@
+{
+  "contract": "D",
+  "operation": "request_cancel",
+  "method": "POST",
+  "path": "/api/v1/requests/{request_id}/cancel",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "cancelled",
+      "kind": "success",
+      "description": "Черновик отменён.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "request_id": "req_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "req_anna_dayoff_1",
+          "type": "absence_request",
+          "status": "cancelled",
+          "owner_id": "u_anna",
+          "team_id": "team_delivery",
+          "approver": {
+            "id": "u_olga",
+            "name": "Ольга Крылова"
+          },
+          "payload": {
+            "kind": "day_off",
+            "date_from": "2026-11-13",
+            "date_to": "2026-11-13",
+            "comment": "Личные дела"
+          },
+          "summary": "Отгул 13.11.2026",
+          "external_ref": null,
+          "fulfilled_at": null,
+          "created_at": "2026-11-11T10:02:00+03:00",
+          "updated_at": "2026-11-11T10:04:00+03:00"
+        }
+      },
+      "response_schema": "common.yaml#/components/schemas/CorpRequest"
+    },
+    {
+      "name": "already_approved",
+      "kind": "conflict",
+      "description": "Согласованную заявку отменить нельзя.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "request_id": "req_anna_dayoff_1"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "conflict",
+            "message": "Заявка уже согласована, отменить её нельзя."
+          }
+        }
+      }
+    }
+  ]
+}
