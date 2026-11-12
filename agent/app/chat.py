@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import time
 from typing import Any
 
 from .context import Context, build_context
@@ -20,9 +21,12 @@ CLAIMED_DRAFT = [
     re.compile(_NOUN + r"\b(?P<gap>(?:[^.!?\n]|(?<=\d)\.(?=\d)){0,60}?)\b(?:создан|подготовлен|отправлен|оформлен|согласован)\w*", re.IGNORECASE),
     re.compile(r"\b(?:созда|подготови|отправи|оформи|согласова)ла?\b(?P<gap>(?:[^.!?\n]|(?<=\d)\.(?=\d)){0,30}?)\b" + _NOUN, re.IGNORECASE),
 ]
-NOT_DONE = re.compile(r"\b(?:не|будет|будут|после|когда|чтобы|можно|могу|нужно|если|пока|ли|бы|уже)\b", re.IGNORECASE)
+NOT_DONE = re.compile(r"\b(?:не|будет|будут|после|когда|чтобы|можно|могу|нужно|если|пока|ли|бы)\b", re.IGNORECASE)
 # «Заявка уже отправлена и ждёт согласования» — правда о прежней заявке, а не о новом черновике.
+# А черновик создаёт только этот ответ, поэтому «черновик уже создан» без карточки — всегда неправда.
 EXISTING = re.compile(r"\bждёт\b|\bждет\b|ожида\w*", re.IGNORECASE)
+ALREADY = re.compile(r"\bуже\b", re.IGNORECASE)
+CREATED = re.compile(r"созда|подготов|оформ", re.IGNORECASE)
 NO_DRAFT_TEXT = ("Черновик заявки не создан: сервис заявок не подтвердил создание. "
                  "Попробуй ещё раз чуть позже — я помогу оформить заново.")
 
@@ -30,6 +34,7 @@ NO_DRAFT_TEXT = ("Черновик заявки не создан: сервис 
 def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
            max_tool_calls: int = 5, timeout: float = 25.0) -> dict[str, Any]:
     ctx = build_context(body)
+    tools.deadline = time.monotonic() + timeout
     result = None
     if model is not None:
         try:
@@ -76,7 +81,9 @@ def claims_draft(text: str) -> bool:
         for m in pattern.finditer(text):
             sentence_end = re.search(r"[.!?\n]", text[m.end():])
             after = text[m.end():m.end() + (sentence_end.start() if sentence_end else len(text))]
-            if not NOT_DONE.search(text[max(0, m.start() - 30):m.start()] + " " + m["gap"]) and not EXISTING.search(after):
+            before = text[max(0, m.start() - 30):m.start()] + " " + m["gap"]
+            about_old_request = ALREADY.search(before) and not CREATED.search(m.group(0))
+            if not NOT_DONE.search(before) and not EXISTING.search(after) and not about_old_request:
                 return True
     return False
 
@@ -202,10 +209,9 @@ def request_access(ctx: Context, systems: tuple[str, ...], items: dict[str, dict
 def question(message: str, tools: Tools) -> dict[str, Any]:
     """Вопрос по базе знаний (A7): ответ — текст найденных фрагментов, источники — они же."""
     try:
-        chunks = tools.search(message)
+        top = safe_chunks(tools.search(message))[:2]
     except ToolError:
         return unknown(tools, "Поиск по базе знаний сейчас недоступен.")
-    top = list({c["source"]["chunk_id"]: c for c in chunks if not looks_like_instructions(c["text"])}.values())[:2]
     if not top:
         return unknown(tools, "В базе знаний ответа не нашёл — попробуй переформулировать вопрос.")
     parts = [f"**{c['source']['title']}" + (f" — {c['source']['section']}" if c["source"].get("section") else "")
@@ -236,19 +242,16 @@ def unknown(tools: Tools, lead: str = "") -> dict[str, Any]:
                     escalation={"needed": contact is not None, "contact": contact})
 
 
+def safe_chunks(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Фрагменты поиска без повторов и без обращений к ассистенту. Ничего не добавляем от себя."""
+    return list({c["source"]["chunk_id"]: c for c in chunks if not looks_like_instructions(c["text"])}.values())
+
+
 def find_sources(tools: Tools, query: str) -> list[dict[str, Any]]:
-    """Источники ровно такие, какие вернул поиск: без повторов, ничего не добавляем от себя."""
     try:
-        chunks = tools.search(query)
+        return [c["source"] for c in safe_chunks(tools.search(query))]
     except ToolError:
         return []
-    seen, sources = set(), []
-    for chunk in chunks:
-        source = chunk["source"]
-        if source["chunk_id"] not in seen:
-            seen.add(source["chunk_id"])
-            sources.append(source)
-    return sources
 
 
 def ask_date(question: str, state: dict[str, Any], sources: list[dict[str, Any]]) -> dict[str, Any]:

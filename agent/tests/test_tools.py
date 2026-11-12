@@ -159,3 +159,23 @@ def test_tools_from_env(monkeypatch):
     monkeypatch.setenv("TOOL_TIMEOUT_SECONDS", "7")
     tools = tools_from_env("tok", "rq-env-0001")
     assert (tools.knowledge_url, tools.mcp_url, tools.timeout, tools.token) == ("http://kb:8060", "http://corp:8070/mcp", 7.0, "tok")
+
+
+def test_calls_never_wait_past_the_answer_deadline():
+    tools = Tools(knowledge_url="http://kb", mcp_url="http://mcp", token="t", request_id="rq-deadline-1", timeout=5)
+    assert tools.time_left() == 5  # срока нет — обычный таймаут
+    tools.deadline = time.monotonic() + 2
+    assert 1.5 < tools.time_left() <= 2
+    tools.deadline = time.monotonic() - 10
+    assert tools.time_left() == 0.5  # срок прошёл — короткая попытка, а не ожидание без конца
+
+
+def test_slow_search_is_cut_by_deadline(tools, backend):
+    tools.timeout = 5
+    tools.deadline = time.monotonic() + 0.3
+    backend.tools["directory_find_contact"] = (False, {"topic": "onboarding", "contacts": []})
+    backend.delay = 1.5
+    started = time.monotonic()
+    with pytest.raises(ToolError):
+        tools.mcp("directory_find_contact", {"topic": "onboarding"})
+    assert time.monotonic() - started < 1.4

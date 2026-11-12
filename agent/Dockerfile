@@ -26,4 +26,4 @@ RUN useradd --create-home app
 USER app
 ENV PORT=8090
 EXPOSE 8090
-CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 60 'app:create_app()'"]
+CMD ["sh", "-c", "exec gunicorn --bind 0.0.0.0:${PORT} --workers 2 --threads 8 --timeout 60 'app:create_app()'"]

@@ -43,6 +43,14 @@ class Tools:
     # Созданные черновики по ключу идемпотентности: запасной режим после сбоя модели берёт их отсюда,
     # а не создаёт заново (A6).
     drafts: dict[str, dict[str, Any]] = field(default_factory=dict)
+    # Общий срок ответа (time.monotonic()). Вызовы не ждут дольше него: иначе core-api не дождётся ответа,
+    # а созданный черновик останется без карточки.
+    deadline: float | None = None
+
+    def time_left(self) -> float:
+        if self.deadline is None:
+            return self.timeout
+        return min(self.timeout, max(0.5, self.deadline - time.monotonic()))
 
     def search(self, query: str, top_k: int = 3) -> list[dict[str, Any]]:
         return self.traced("knowledge_search", lambda: self._post(f"{self.knowledge_url}/v1/search", {"query": query, "top_k": top_k})["results"])
@@ -57,7 +65,7 @@ class Tools:
         return result
 
     def _mcp(self, tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        return asyncio.run(asyncio.wait_for(self._call_tool(tool, arguments), self.timeout))
+        return asyncio.run(asyncio.wait_for(self._call_tool(tool, arguments), self.time_left()))
 
     def _headers(self) -> dict[str, str]:
         return {"Authorization": f"Bearer {self.token}", "X-Request-Id": self.request_id}
@@ -82,13 +90,13 @@ class Tools:
             headers={**self._headers(), "Content-Type": "application/json"},
         )
         try:
-            with urllib.request.urlopen(request, timeout=self.timeout) as response:
+            with urllib.request.urlopen(request, timeout=self.time_left()) as response:
                 return json.load(response)
         except urllib.error.HTTPError as exc:
             raise _error(_json(exc.read())) from exc
 
     async def _call_tool(self, tool: str, arguments: dict[str, Any]) -> dict[str, Any]:
-        async with httpx2.AsyncClient(headers=self._headers(), timeout=self.timeout) as http:
+        async with httpx2.AsyncClient(headers=self._headers(), timeout=self.time_left()) as http:
             async with Client(streamable_http_client(self.mcp_url, http_client=http)) as client:
                 result = await client.call_tool(tool, arguments)
         body = result.structured_content or {}
