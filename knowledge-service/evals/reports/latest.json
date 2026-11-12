@@ -1,0 +1,2202 @@
+{
+  "generated_at": "2026-11-12T15:58:37.551684+00:00",
+  "corpus_sha256": "4a3378727f89664aeb863ddeefbaa4e237a0377cfd01b2893b8e86e77b1d1fd8",
+  "evaluation_phase": "regression_after_holdout_review",
+  "search_code_sha256": "85c06302718ca4b28b9ed20f880e933c4e483cbbd13e3a006aa5e8e21972c2ec",
+  "cases_sha256": "c3a49fc7387588329f97f5335ce65a684c939f2f05b6dfdec95985ddc64a2761",
+  "metrics": {
+    "baseline": {
+      "dev": {
+        "cases": 40,
+        "answerable": 32,
+        "unanswerable": 8,
+        "recall_at_1": 0.90625,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "mrr": 0.953125,
+        "empty_accuracy": 0.25,
+        "leaks": 0
+      },
+      "holdout": {
+        "cases": 20,
+        "answerable": 14,
+        "unanswerable": 6,
+        "recall_at_1": 0.7857142857142857,
+        "recall_at_3": 0.8571428571428571,
+        "recall_at_5": 0.8571428571428571,
+        "mrr": 0.8214285714285714,
+        "empty_accuracy": 0.5,
+        "leaks": 0
+      },
+      "all": {
+        "cases": 60,
+        "answerable": 46,
+        "unanswerable": 14,
+        "recall_at_1": 0.8695652173913043,
+        "recall_at_3": 0.9565217391304348,
+        "recall_at_5": 0.9565217391304348,
+        "mrr": 0.9130434782608695,
+        "empty_accuracy": 0.35714285714285715,
+        "leaks": 0
+      }
+    },
+    "improved": {
+      "dev": {
+        "cases": 40,
+        "answerable": 32,
+        "unanswerable": 8,
+        "recall_at_1": 1.0,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "empty_accuracy": 1.0,
+        "leaks": 0
+      },
+      "holdout": {
+        "cases": 20,
+        "answerable": 14,
+        "unanswerable": 6,
+        "recall_at_1": 0.9285714285714286,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "mrr": 0.9523809523809524,
+        "empty_accuracy": 1.0,
+        "leaks": 0
+      },
+      "all": {
+        "cases": 60,
+        "answerable": 46,
+        "unanswerable": 14,
+        "recall_at_1": 0.9782608695652174,
+        "recall_at_3": 1.0,
+        "recall_at_5": 1.0,
+        "mrr": 0.9855072463768116,
+        "empty_accuracy": 1.0,
+        "leaks": 0
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "day_off",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как оформить отгул?",
+      "relevant": [
+        "kb_absence_rules#day-off"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_rules#sick",
+        "kb_absence_rules#day-off",
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#dates",
+        "kb_access_howto#request"
+      ],
+      "first_relevant_rank": 2,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "day_off",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как оформить отгул?",
+      "relevant": [
+        "kb_absence_rules#day-off"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_rules#day-off",
+        "kb_absence_rules#sick",
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#dates",
+        "kb_who_is_who_delivery#whom"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "vacation",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Сколько дней длится отпуск стажёра?",
+      "relevant": [
+        "kb_absence_rules#vacation"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_rules#vacation",
+        "kb_absence_rules#day-off",
+        "kb_absence_rules#sick",
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "vacation",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Сколько дней длится отпуск стажёра?",
+      "relevant": [
+        "kb_absence_rules#vacation"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_rules#vacation"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "sick",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Если заболел",
+      "relevant": [
+        "kb_absence_rules#sick"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_rules#sick",
+        "kb_delivery_access#vpn",
+        "kb_delivery_access#gitlab",
+        "kb_access_howto#rejected",
+        "kb_onboarding_first_weeks#months"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "sick",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Если заболел",
+      "relevant": [
+        "kb_absence_rules#sick"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_rules#sick"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "access_apply",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как подать заявку на доступ?",
+      "relevant": [
+        "kb_access_howto#request"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_howto#request",
+        "kb_absence_rules#day-off",
+        "kb_access_howto#rejected",
+        "kb_absence_rules#sick",
+        "kb_absence_handover#dates"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "access_apply",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Как подать заявку на доступ?",
+      "relevant": [
+        "kb_access_howto#request"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_howto#request",
+        "kb_access_howto#rejected",
+        "kb_access_statuses#duplicates-rejected",
+        "kb_access_statuses#draft-submitted",
+        "kb_access_statuses#approved-granted"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "access_rejected",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Заявку на доступ отклонили",
+      "relevant": [
+        "kb_access_howto#rejected",
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_howto#rejected",
+        "kb_access_howto#request",
+        "kb_absence_handover#dates",
+        "kb_absence_rules#sick",
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "access_rejected",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Заявку на доступ отклонили",
+      "relevant": [
+        "kb_access_howto#rejected",
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_howto#rejected",
+        "kb_access_statuses#duplicates-rejected",
+        "kb_access_howto#request",
+        "kb_access_statuses#draft-submitted",
+        "kb_access_statuses#approved-granted"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "granted",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "approved fulfilled_at granted",
+      "relevant": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_statuses#approved-granted",
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "granted",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "approved fulfilled_at granted",
+      "relevant": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "draft",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Чем черновик отличается от отправленной заявки?",
+      "relevant": [
+        "kb_access_statuses#draft-submitted"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_statuses#draft-submitted",
+        "kb_access_howto#required",
+        "kb_access_statuses#approved-granted",
+        "kb_delivery_access#required",
+        "kb_who_is_who_delivery#whom"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "draft",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Чем черновик отличается от отправленной заявки?",
+      "relevant": [
+        "kb_access_statuses#draft-submitted"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_statuses#draft-submitted"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "duplicate",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Повторная заявка pending",
+      "relevant": [
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_statuses#duplicates-rejected",
+        "kb_access_statuses#draft-submitted",
+        "kb_delivery_access#gitlab",
+        "kb_delivery_access#required",
+        "kb_access_statuses#approved-granted"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "duplicate",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Повторная заявка pending",
+      "relevant": [
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_statuses#duplicates-rejected",
+        "kb_access_statuses#draft-submitted",
+        "kb_delivery_access#gitlab"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "dates",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Проверка дат перед отправкой",
+      "relevant": [
+        "kb_absence_handover#dates"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_handover#dates",
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "dates",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Проверка дат перед отправкой",
+      "relevant": [
+        "kb_absence_handover#dates"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_handover#dates"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "handover",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Передача незавершённых задач",
+      "relevant": [
+        "kb_absence_handover#handover"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_handover#handover",
+        "kb_absence_handover#calendar",
+        "kb_absence_handover#dates",
+        "kb_access_howto#rejected",
+        "kb_onboarding_blockers#one-on-one"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "handover",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Передача незавершённых задач",
+      "relevant": [
+        "kb_absence_handover#handover"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_handover#handover",
+        "kb_absence_handover#calendar",
+        "kb_absence_handover#dates"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "calendar",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Отсутствие в календаре команды",
+      "relevant": [
+        "kb_absence_handover#calendar",
+        "kb_absence_rules#day-off"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_handover#calendar",
+        "kb_absence_rules#day-off",
+        "kb_absence_handover#dates",
+        "kb_absence_rules#vacation",
+        "kb_absence_rules#sick"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "calendar",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Отсутствие в календаре команды",
+      "relevant": [
+        "kb_absence_handover#calendar",
+        "kb_absence_rules#day-off"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_handover#calendar",
+        "kb_absence_rules#day-off",
+        "kb_absence_handover#dates",
+        "kb_absence_handover#handover",
+        "kb_absence_rules#vacation"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "blocked",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Застрял на задаче",
+      "relevant": [
+        "kb_onboarding_blockers#blocked-task"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_blockers#blocked-task",
+        "kb_who_is_who_delivery#whom",
+        "kb_who_is_who_delivery#people",
+        "kb_absence_handover#dates",
+        "kb_delivery_rituals#planning"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "blocked",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Застрял на задаче",
+      "relevant": [
+        "kb_onboarding_blockers#blocked-task"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_blockers#blocked-task",
+        "kb_who_is_who_delivery#whom"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "meeting",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Подготовка к встрече с наставником",
+      "relevant": [
+        "kb_onboarding_blockers#one-on-one"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_blockers#one-on-one",
+        "kb_onboarding_blockers#equator",
+        "kb_absence_handover#handover",
+        "kb_onboarding_blockers#blocked-task",
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "meeting",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Подготовка к встрече с наставником",
+      "relevant": [
+        "kb_onboarding_blockers#one-on-one"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_blockers#one-on-one",
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_blockers#blocked-task",
+        "kb_delivery_rituals#one-on-one",
+        "kb_absence_handover#calendar"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "equator",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Подготовка презентации к экватору",
+      "relevant": [
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_first_weeks#equator"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_blockers#one-on-one",
+        "kb_absence_handover#calendar",
+        "kb_absence_handover#handover",
+        "kb_onboarding_blockers#blocked-task"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "equator",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Подготовка презентации к экватору",
+      "relevant": [
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_first_weeks#equator"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_first_weeks#equator"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "week1",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Первая неделя стажировки",
+      "relevant": [
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#week2",
+        "kb_onboarding_first_weeks#week1",
+        "kb_onboarding_first_weeks#equator",
+        "kb_onboarding_first_weeks#months",
+        "kb_absence_rules#sick"
+      ],
+      "first_relevant_rank": 2,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "week1",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Первая неделя стажировки",
+      "relevant": [
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_first_weeks#week1",
+        "kb_onboarding_first_weeks#week2",
+        "kb_onboarding_first_weeks#months",
+        "kb_onboarding_first_weeks#equator",
+        "kb_delivery_rituals#standup"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "week2",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Вторая неделя стажировки",
+      "relevant": [
+        "kb_onboarding_first_weeks#week2"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#week2",
+        "kb_onboarding_first_weeks#equator",
+        "kb_onboarding_first_weeks#week1",
+        "kb_onboarding_first_weeks#months",
+        "kb_absence_rules#sick"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "week2",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Вторая неделя стажировки",
+      "relevant": [
+        "kb_onboarding_first_weeks#week2"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_first_weeks#week2",
+        "kb_onboarding_first_weeks#months",
+        "kb_onboarding_first_weeks#week1",
+        "kb_onboarding_first_weeks#equator"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "standup",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Когда стендап?",
+      "relevant": [
+        "kb_delivery_rituals#standup"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_rituals#standup",
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review",
+        "kb_delivery_rituals#one-on-one",
+        "kb_onboarding_first_weeks#week2"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "standup",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Когда стендап?",
+      "relevant": [
+        "kb_delivery_rituals#standup"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_rituals#standup",
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review",
+        "kb_delivery_rituals#one-on-one"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "planning",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Планирование спринта",
+      "relevant": [
+        "kb_delivery_rituals#planning"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review",
+        "kb_delivery_rituals#one-on-one",
+        "kb_delivery_rituals#standup"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "planning",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Планирование спринта",
+      "relevant": [
+        "kb_delivery_rituals#planning"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_rituals#planning"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "code_review",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Кто делает первое код-ревью?",
+      "relevant": [
+        "kb_delivery_rituals#code-review"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_rituals#code-review",
+        "kb_onboarding_first_weeks#months",
+        "kb_who_is_who_delivery#channels",
+        "kb_who_is_who_delivery#whom",
+        "kb_absence_handover#handover"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "code_review",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Кто делает первое код-ревью?",
+      "relevant": [
+        "kb_delivery_rituals#code-review"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_rituals#code-review",
+        "kb_onboarding_first_weeks#months",
+        "kb_delivery_rituals#standup",
+        "kb_access_howto#required"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "postgres",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "PostgreSQL порт 5432",
+      "relevant": [
+        "kb_delivery_dev_setup#troubleshooting",
+        "kb_delivery_access#vpn"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_dev_setup#troubleshooting",
+        "kb_delivery_access#vpn",
+        "kb_delivery_dev_setup#requirements",
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "postgres",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "PostgreSQL порт 5432",
+      "relevant": [
+        "kb_delivery_dev_setup#troubleshooting",
+        "kb_delivery_access#vpn"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_dev_setup#troubleshooting",
+        "kb_delivery_access#vpn"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_run",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "docker compose make migrate",
+      "relevant": [
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_dev_setup#first-run",
+        "kb_delivery_dev_setup#requirements",
+        "kb_delivery_dev_setup#troubleshooting"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_run",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "docker compose make migrate",
+      "relevant": [
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_gitlab",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Репозиторий GitLab не открывается",
+      "relevant": [
+        "kb_delivery_access#gitlab"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_access#gitlab",
+        "kb_delivery_dev_setup#requirements",
+        "kb_access_howto#rejected",
+        "kb_delivery_dev_setup#first-run",
+        "kb_delivery_access#required"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_gitlab",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Репозиторий GitLab не открывается",
+      "relevant": [
+        "kb_delivery_access#gitlab"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_access#gitlab",
+        "kb_delivery_dev_setup#requirements"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_access",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Обязательные системы Доставки",
+      "relevant": [
+        "kb_delivery_access#required"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_access#required",
+        "kb_access_statuses#approved-granted",
+        "kb_delivery_dev_setup#requirements",
+        "kb_delivery_dev_setup#troubleshooting",
+        "kb_delivery_dev_setup#first-run"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_access",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Обязательные системы Доставки",
+      "relevant": [
+        "kb_delivery_access#required"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_access#required",
+        "kb_who_is_who_delivery#channels"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_channels",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Каналы команды",
+      "relevant": [
+        "kb_who_is_who_delivery#channels"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_who_is_who_delivery#channels",
+        "kb_onboarding_first_weeks#week1",
+        "kb_delivery_access#required",
+        "kb_delivery_rituals#code-review",
+        "kb_absence_rules#day-off"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "delivery_channels",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Каналы команды",
+      "relevant": [
+        "kb_who_is_who_delivery#channels"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_who_is_who_delivery#channels",
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_run",
+      "split": "dev",
+      "user": "u_max",
+      "query": "npm ci npm run dev",
+      "relevant": [
+        "kb_auto_frontend_setup#first-run",
+        "kb_auto_access#gitlab"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_auto_frontend_setup#first-run",
+        "kb_auto_access#gitlab",
+        "kb_auto_frontend_setup#checks"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_run",
+      "split": "dev",
+      "user": "u_max",
+      "query": "npm ci npm run dev",
+      "relevant": [
+        "kb_auto_frontend_setup#first-run",
+        "kb_auto_access#gitlab"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_auto_frontend_setup#first-run",
+        "kb_auto_access#gitlab"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_checks",
+      "split": "dev",
+      "user": "u_max",
+      "query": "npm run lint npm test",
+      "relevant": [
+        "kb_auto_frontend_setup#checks"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_auto_frontend_setup#checks",
+        "kb_auto_frontend_setup#first-run",
+        "kb_auto_access#gitlab"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_checks",
+      "split": "dev",
+      "user": "u_max",
+      "query": "npm run lint npm test",
+      "relevant": [
+        "kb_auto_frontend_setup#checks"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_auto_frontend_setup#checks"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "release",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Расписание релизов",
+      "relevant": [
+        "kb_auto_release_process#schedule"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_auto_release_process#schedule",
+        "kb_auto_release_process#rollback",
+        "kb_onboarding_blockers#one-on-one",
+        "kb_auto_release_process#author"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "release",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Расписание релизов",
+      "relevant": [
+        "kb_auto_release_process#schedule"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_auto_release_process#schedule"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "rollback",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Откат релиза",
+      "relevant": [
+        "kb_auto_release_process#rollback"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_auto_release_process#author",
+        "kb_auto_release_process#rollback",
+        "kb_auto_release_process#schedule"
+      ],
+      "first_relevant_rank": 2,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "rollback",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Откат релиза",
+      "relevant": [
+        "kb_auto_release_process#rollback"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_auto_release_process#rollback"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_access",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Обязательные системы Авто",
+      "relevant": [
+        "kb_auto_access#required"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_auto_access#required",
+        "kb_auto_access#help",
+        "kb_auto_frontend_setup#requirements",
+        "kb_auto_release_process#schedule",
+        "kb_auto_frontend_setup#checks"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_access",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Обязательные системы Авто",
+      "relevant": [
+        "kb_auto_access#required"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_auto_access#required",
+        "kb_auto_access#help"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "mentor",
+      "split": "dev",
+      "user": "u_igor",
+      "query": "Стажёр не справляется второй месяц подряд",
+      "relevant": [
+        "kb_mentor_guide#hard-cases"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_mentor_guide#hard-cases",
+        "kb_onboarding_first_weeks#months",
+        "kb_absence_rules#vacation",
+        "kb_delivery_rituals#standup",
+        "kb_mentor_guide#feedback"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "mentor",
+      "split": "dev",
+      "user": "u_igor",
+      "query": "Стажёр не справляется второй месяц подряд",
+      "relevant": [
+        "kb_mentor_guide#hard-cases"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_mentor_guide#hard-cases"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "mentor_feedback",
+      "split": "dev",
+      "user": "u_dina",
+      "query": "Памятка наставнику обратная связь",
+      "relevant": [
+        "kb_mentor_guide#feedback"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_mentor_guide#feedback",
+        "kb_mentor_guide#hard-cases",
+        "kb_mentor_guide#week1",
+        "kb_onboarding_blockers#one-on-one",
+        "kb_auto_release_process#rollback"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "mentor_feedback",
+      "split": "dev",
+      "user": "u_dina",
+      "query": "Памятка наставнику обратная связь",
+      "relevant": [
+        "kb_mentor_guide#feedback"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_mentor_guide#feedback",
+        "kb_mentor_guide#hard-cases",
+        "kb_mentor_guide#week1",
+        "kb_onboarding_blockers#one-on-one"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "hr_public",
+      "split": "dev",
+      "user": "u_elena",
+      "query": "Статус approved",
+      "relevant": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_statuses#approved-granted",
+        "kb_access_statuses#draft-submitted",
+        "kb_access_statuses#duplicates-rejected",
+        "kb_absence_handover#handover"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "hr_public",
+      "split": "dev",
+      "user": "u_elena",
+      "query": "Статус approved",
+      "relevant": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "parking",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Где находится парковка?",
+      "relevant": [],
+      "mode": "baseline",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "parking",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Где находится парковка?",
+      "relevant": [],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "salary",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Какая зарплата у стажёров?",
+      "relevant": [],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_howto#rejected",
+        "kb_who_is_who_delivery#people",
+        "kb_access_howto#request"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "salary",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Какая зарплата у стажёров?",
+      "relevant": [],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "mortgage",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Как оформить ипотеку?",
+      "relevant": [],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_rules#sick",
+        "kb_absence_rules#vacation",
+        "kb_absence_rules#day-off",
+        "kb_access_howto#request",
+        "kb_access_howto#rejected"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "mortgage",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Как оформить ипотеку?",
+      "relevant": [],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "foreign_release",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Расписание релизов Авто",
+      "relevant": [],
+      "forbidden": [
+        "kb_auto_release_process"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_blockers#one-on-one"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "foreign_release",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "Расписание релизов Авто",
+      "relevant": [],
+      "forbidden": [
+        "kb_auto_release_process"
+      ],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "foreign_standup",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Когда стендап Доставки?",
+      "relevant": [],
+      "forbidden": [
+        "kb_delivery_rituals"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#week2",
+        "kb_onboarding_first_weeks#equator",
+        "kb_onboarding_first_weeks#months",
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "foreign_standup",
+      "split": "dev",
+      "user": "u_max",
+      "query": "Когда стендап Доставки?",
+      "relevant": [],
+      "forbidden": [
+        "kb_delivery_rituals"
+      ],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "hr_team",
+      "split": "dev",
+      "user": "u_elena",
+      "query": "docker compose make migrate",
+      "relevant": [],
+      "forbidden": [
+        "kb_delivery_dev_setup"
+      ],
+      "mode": "baseline",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "hr_team",
+      "split": "dev",
+      "user": "u_elena",
+      "query": "docker compose make migrate",
+      "relevant": [],
+      "forbidden": [
+        "kb_delivery_dev_setup"
+      ],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "manager_role",
+      "split": "dev",
+      "user": "u_olga",
+      "query": "Сложные случаи: стажёр не справляется второй месяц подряд",
+      "relevant": [],
+      "forbidden": [
+        "kb_mentor_guide"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#months",
+        "kb_delivery_rituals#standup",
+        "kb_absence_rules#vacation",
+        "kb_delivery_rituals#one-on-one",
+        "kb_delivery_access#gitlab"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "manager_role",
+      "split": "dev",
+      "user": "u_olga",
+      "query": "Сложные случаи: стажёр не справляется второй месяц подряд",
+      "relevant": [],
+      "forbidden": [
+        "kb_mentor_guide"
+      ],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "empty_words",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "как что где",
+      "relevant": [],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_rituals#standup",
+        "kb_access_howto#request",
+        "kb_absence_rules#sick",
+        "kb_access_howto#rejected",
+        "kb_delivery_dev_setup#troubleshooting"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "empty_words",
+      "split": "dev",
+      "user": "u_anna",
+      "query": "как что где",
+      "relevant": [],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "day_off_plural",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Правила отгулов",
+      "relevant": [
+        "kb_absence_rules#day-off"
+      ],
+      "mode": "baseline",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "day_off_plural",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Правила отгулов",
+      "relevant": [
+        "kb_absence_rules#day-off"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_rules#day-off",
+        "kb_absence_rules#sick",
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#dates"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "vacation_notice",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "За сколько недель обсуждают даты отпуска?",
+      "relevant": [
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#dates"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_handover#dates",
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#calendar",
+        "kb_absence_handover#handover",
+        "kb_who_is_who_delivery#people"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "vacation_notice",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "За сколько недель обсуждают даты отпуска?",
+      "relevant": [
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#dates"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#dates"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "sick_contact",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Кто решает вопросы о больничном?",
+      "relevant": [
+        "kb_absence_rules#sick"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_rules#sick",
+        "kb_absence_handover#handover",
+        "kb_onboarding_first_weeks#months",
+        "kb_auto_release_process#rollback",
+        "kb_absence_rules#vacation"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "sick_contact",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Кто решает вопросы о больничном?",
+      "relevant": [
+        "kb_absence_rules#sick"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_rules#sick"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "grant_delay",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Доступ согласован, но не выдан",
+      "relevant": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_access#gitlab",
+        "kb_access_statuses#approved-granted",
+        "kb_absence_handover#calendar",
+        "kb_access_howto#rejected",
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "first_relevant_rank": 2,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "grant_delay",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Доступ согласован, но не выдан",
+      "relevant": [
+        "kb_access_statuses#approved-granted"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_howto#required",
+        "kb_delivery_access#gitlab",
+        "kb_access_statuses#approved-granted"
+      ],
+      "first_relevant_rank": 3,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "pending_again",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Создавать ли дубль при pending?",
+      "relevant": [
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_access_statuses#duplicates-rejected",
+        "kb_access_statuses#draft-submitted"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "pending_again",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Создавать ли дубль при pending?",
+      "relevant": [
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_access_statuses#duplicates-rejected"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "unfinished",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Кому передать незавершённые задачи перед отпуском?",
+      "relevant": [
+        "kb_absence_handover#handover"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_handover#handover",
+        "kb_absence_handover#dates",
+        "kb_auto_frontend_setup#checks",
+        "kb_auto_access#required",
+        "kb_onboarding_blockers#equator"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "unfinished",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Кому передать незавершённые задачи перед отпуском?",
+      "relevant": [
+        "kb_absence_handover#handover"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_handover#handover",
+        "kb_absence_rules#vacation",
+        "kb_absence_handover#dates"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "meetings_absence",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Предупредить организаторов встреч об отсутствии",
+      "relevant": [
+        "kb_absence_handover#calendar"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_absence_handover#calendar",
+        "kb_onboarding_blockers#one-on-one"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "meetings_absence",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Предупредить организаторов встреч об отсутствии",
+      "relevant": [
+        "kb_absence_handover#calendar"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_absence_handover#calendar",
+        "kb_absence_rules#day-off"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "blocked_error",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Что приложить наставнику к ошибке в задаче?",
+      "relevant": [
+        "kb_onboarding_blockers#blocked-task"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_blockers#blocked-task",
+        "kb_access_statuses#approved-granted",
+        "kb_auto_frontend_setup#requirements",
+        "kb_auto_access#help",
+        "kb_auto_release_process#author"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "blocked_error",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Что приложить наставнику к ошибке в задаче?",
+      "relevant": [
+        "kb_onboarding_blockers#blocked-task"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_blockers#blocked-task"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "equator_months",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Промежуточные результаты через три месяца стажировки",
+      "relevant": [
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_first_weeks#equator"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#equator",
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_first_weeks#week2",
+        "kb_absence_rules#sick",
+        "kb_onboarding_first_weeks#months"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "equator_months",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Промежуточные результаты через три месяца стажировки",
+      "relevant": [
+        "kb_onboarding_blockers#equator",
+        "kb_onboarding_first_weeks#equator"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_onboarding_first_weeks#equator",
+        "kb_onboarding_blockers#equator"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "daily_alias",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Во сколько daily?",
+      "relevant": [
+        "kb_delivery_rituals#standup"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#months"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "daily_alias",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Во сколько daily?",
+      "relevant": [
+        "kb_delivery_rituals#standup"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_rituals#standup",
+        "kb_delivery_rituals#planning",
+        "kb_delivery_rituals#code-review",
+        "kb_delivery_rituals#one-on-one"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "vpn_alias",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "ВПН тестовый стенд недоступен",
+      "relevant": [
+        "kb_delivery_access#vpn",
+        "kb_delivery_dev_setup#troubleshooting"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_access#vpn",
+        "kb_delivery_access#gitlab"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "vpn_alias",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "ВПН тестовый стенд недоступен",
+      "relevant": [
+        "kb_delivery_access#vpn",
+        "kb_delivery_dev_setup#troubleshooting"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_delivery_access#vpn",
+        "kb_access_howto#required"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_rollback_en",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "rollback release",
+      "relevant": [
+        "kb_auto_release_process#rollback"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_auto_release_process#rollback",
+        "kb_auto_release_process#author"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_rollback_en",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "rollback release",
+      "relevant": [
+        "kb_auto_release_process#rollback"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_auto_release_process#rollback"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_contact",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Доступ согласован, но не появился: к кому идти?",
+      "relevant": [
+        "kb_auto_access#help",
+        "kb_access_statuses#approved-granted",
+        "kb_access_howto#request"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_auto_access#help",
+        "kb_access_statuses#approved-granted",
+        "kb_access_howto#request",
+        "kb_absence_handover#calendar",
+        "kb_auto_access#gitlab"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "auto_contact",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Доступ согласован, но не появился: к кому идти?",
+      "relevant": [
+        "kb_auto_access#help",
+        "kb_access_statuses#approved-granted",
+        "kb_access_howto#request"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_auto_access#help"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "mentor_equator",
+      "split": "holdout",
+      "user": "u_igor",
+      "query": "Наставнику подготовить напутственное слово",
+      "relevant": [
+        "kb_mentor_guide#feedback"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_mentor_guide#feedback",
+        "kb_mentor_guide#hard-cases",
+        "kb_absence_rules#sick",
+        "kb_mentor_guide#week1",
+        "kb_who_is_who_delivery#whom"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "mentor_equator",
+      "split": "holdout",
+      "user": "u_igor",
+      "query": "Наставнику подготовить напутственное слово",
+      "relevant": [
+        "kb_mentor_guide#feedback"
+      ],
+      "mode": "improved",
+      "actual": [
+        "kb_mentor_guide#feedback"
+      ],
+      "first_relevant_rank": 1,
+      "correct_empty": null,
+      "leaks": []
+    },
+    {
+      "id": "kitchen",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Где заказать обед?",
+      "relevant": [],
+      "mode": "baseline",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "kitchen",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "Где заказать обед?",
+      "relevant": [],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "stock_price",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Какова цена акций?",
+      "relevant": [],
+      "mode": "baseline",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "stock_price",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Какова цена акций?",
+      "relevant": [],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "insurance",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Доступ к медицинской страховке",
+      "relevant": [],
+      "mode": "baseline",
+      "actual": [
+        "kb_delivery_dev_setup#requirements",
+        "kb_who_is_who_delivery#whom",
+        "kb_access_statuses#approved-granted",
+        "kb_access_howto#rejected",
+        "kb_access_howto#request"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "insurance",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Доступ к медицинской страховке",
+      "relevant": [],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "hr_release",
+      "split": "holdout",
+      "user": "u_elena",
+      "query": "Когда заморозка релизов frontend Авто?",
+      "relevant": [],
+      "forbidden": [
+        "kb_auto_release_process"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#week2",
+        "kb_onboarding_first_weeks#equator",
+        "kb_onboarding_first_weeks#months",
+        "kb_onboarding_first_weeks#week1"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "hr_release",
+      "split": "holdout",
+      "user": "u_elena",
+      "query": "Когда заморозка релизов frontend Авто?",
+      "relevant": [],
+      "forbidden": [
+        "kb_auto_release_process"
+      ],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "foreign_backend",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "PostgreSQL 5432 Доставки",
+      "relevant": [],
+      "forbidden": [
+        "kb_delivery_dev_setup",
+        "kb_delivery_access"
+      ],
+      "mode": "baseline",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "foreign_backend",
+      "split": "holdout",
+      "user": "u_max",
+      "query": "PostgreSQL 5432 Доставки",
+      "relevant": [],
+      "forbidden": [
+        "kb_delivery_dev_setup",
+        "kb_delivery_access"
+      ],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    },
+    {
+      "id": "foreign_mentor",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Напутственное слово наставника",
+      "relevant": [],
+      "forbidden": [
+        "kb_mentor_guide"
+      ],
+      "mode": "baseline",
+      "actual": [
+        "kb_onboarding_first_weeks#week1",
+        "kb_absence_rules#day-off"
+      ],
+      "first_relevant_rank": null,
+      "correct_empty": false,
+      "leaks": []
+    },
+    {
+      "id": "foreign_mentor",
+      "split": "holdout",
+      "user": "u_anna",
+      "query": "Напутственное слово наставника",
+      "relevant": [],
+      "forbidden": [
+        "kb_mentor_guide"
+      ],
+      "mode": "improved",
+      "actual": [],
+      "first_relevant_rank": null,
+      "correct_empty": true,
+      "leaks": []
+    }
+  ]
+}

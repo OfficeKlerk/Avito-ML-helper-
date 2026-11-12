@@ -49,9 +49,13 @@ disclaimer: "Тестовая инструкция, не является рег
 
 | Доступ | Документы |
 |---|---|
-| Всем | `kb_absence_rules`, `kb_access_howto`, `kb_onboarding_first_weeks` |
-| Команде Авито Доставка | `kb_who_is_who_delivery`, `kb_delivery_rituals`, `kb_delivery_dev_setup` |
-| Команде Авто | `kb_auto_release_process`, `kb_auto_frontend_setup` |
+| Всем | `kb_absence_rules`, `kb_access_howto`, `kb_onboarding_first_weeks`, `kb_absence_handover`, `kb_access_statuses`, `kb_onboarding_blockers` |
+| Команде Авито Доставка | `kb_who_is_who_delivery`, `kb_delivery_rituals`, `kb_delivery_dev_setup`, `kb_delivery_access` |
+| Команде Авто | `kb_auto_release_process`, `kb_auto_frontend_setup`, `kb_auto_access` |
 | Наставникам | `kb_mentor_guide` |
 
-После правки данных запусти `make contracts`.
+Всего 14 документов и 44 фрагмента. Добавленные в K6 документы уточняют статусы
+доступов, передачу задач перед отсутствием, блокеры адаптации и доступы двух команд.
+Идентификаторы и содержимое исходных девяти документов сохранены.
+
+После правки данных запусти `make contracts` и `make eval-knowledge`.
