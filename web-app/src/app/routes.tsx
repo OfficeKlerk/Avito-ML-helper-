@@ -3,7 +3,8 @@ import { LoginPage } from "./LoginPage";
 import { ProfilePage } from "./ProfilePage";
 import { NotificationsPage } from "../features/notifications/NotificationsPage";
 import { OnboardingPage } from "../features/onboarding/OnboardingPage";
-import { ActionPage, ActionsPage, ChatPage } from "./SectionPages";
+import { ActionPage, ActionsPage } from "../features/actions/ActionsPage";
+import { ChatPage } from "./SectionPages";
 import { PageNotFound, RouteError, Shell } from "./Shell";
 import { RequireAuth } from "./session";
 

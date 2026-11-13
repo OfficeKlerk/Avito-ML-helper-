@@ -1,8 +1,6 @@
-import { useCallback, type ReactNode } from "react";
-import { Link, useParams } from "react-router";
+import type { ReactNode } from "react";
 import { call, type Schemas } from "../shared/api/client";
 import { useApiData, type Load } from "../shared/api/useApiData";
-import { ActionCard } from "../shared/ui/ActionCard";
 import { ErrorMessage, Loading, Status } from "../shared/ui/controls";
 import { useSession } from "./session";
 
@@ -23,7 +21,6 @@ function Empty({ children }: { children: ReactNode }) {
 }
 
 const loadChat: Load<Schemas["ChatMessageList"]> = (api, signal) => call(api.GET("/api/chat/messages", { signal }));
-const loadActions: Load<Schemas["ActionCardList"]> = (api, signal) => call(api.GET("/api/actions", { signal }));
 
 export function ChatPage() {
   return <Page title="Чат"><SectionData load={loadChat}>{({ messages }) =>
@@ -38,28 +35,4 @@ export function ChatPage() {
         <p className="message-text">{message.text}</p>
       </li>)}</ol> : <Empty>История пока пуста.</Empty>
   }</SectionData></Page>;
-}
-
-export function ActionsPage() {
-  return <Page title="Заявки"><SectionData load={loadActions}>{({ actions }) =>
-    actions.length ? <ul className="plain-list card-list">{actions.map((action) => <li key={action.id}>
-      <ActionCard action={action} footer={<Link to={`/actions/${encodeURIComponent(action.id)}`}
-        aria-label={`Открыть заявку «${action.title}»`}>Открыть заявку</Link>} />
-    </li>)}</ul> : <Empty>Заявок пока нет.</Empty>
-  }</SectionData></Page>;
-}
-
-export function ActionPage() {
-  const { actionId = "" } = useParams();
-  return <Page title="Заявка">
-    <Link to="/actions">Все заявки</Link>
-    <ActionDetail key={actionId} id={actionId} />
-  </Page>;
-}
-
-function ActionDetail({ id }: { id: string }) {
-  // ActionPage remounts the detail when a different identifier is selected.
-  const load = useCallback<Load<Schemas["ActionCard"]>>((api, signal) =>
-    call(api.GET("/api/actions/{action_id}", { signal, params: { path: { action_id: id } } })), [id]);
-  return <SectionData load={load}>{(action) => <ActionCard action={action} />}</SectionData>;
 }
