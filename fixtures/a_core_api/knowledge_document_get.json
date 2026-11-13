@@ -1,0 +1,135 @@
+{
+  "contract": "A",
+  "operation": "knowledge_document_get",
+  "method": "GET",
+  "path": "/api/knowledge/documents/{doc_id}",
+  "request_schema": null,
+  "cases": [
+    {
+      "name": "public_document",
+      "kind": "success",
+      "description": "Общий документ целиком.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "doc_id": "kb_absence_rules"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "doc_id": "kb_absence_rules",
+          "title": "Как оформить отгул или отпуск",
+          "visibility": [
+            "public"
+          ],
+          "tags": [
+            "отгул",
+            "отпуск",
+            "отсутствие"
+          ],
+          "updated_at": "2026-11-02",
+          "disclaimer": "Тестовая инструкция, не является регламентом Авито",
+          "text": "# Как оформить отгул или отпуск\n\n## Отгул {#day-off}\n\nОтгул — это один или два дня отсутствия по личным делам. Заявку нужно подать не позже чем за один рабочий день до отгула.\n\n1. Заранее предупреди наставника и руководителя команды — устно или в личных сообщениях.\n2. Создай заявку на отгул в сервисе отсутствий: укажи дату и, если хочешь, короткий комментарий.\n3. Дождись согласования. Отгул согласует руководитель команды.\n4. Отметь отсутствие в календаре команды, чтобы коллеги не ставили на это время встречи.\n\nОтгул длиннее двух дней оформляется как отпуск.\n\n## Отпуск {#vacation}\n\nОтпуск стажёра — до 14 календарных дней подряд. Даты обсуждают с руководителем не позже чем за две недели до начала.\n\n1. Обсуди даты с руководителем и наставником.\n2. Создай заявку на отпуск в сервисе отсутствий.\n3. После согласования передай текущие задачи наставнику и напиши в канал команды, кто тебя заменяет.\n\n## Если заболел {#sick}\n\nНапиши наставнику и руководителю в начале дня. Заявку на отгул оформлять не нужно. Вопросы о больничном решает куратор стажировки."
+        }
+      },
+      "response_schema": "e_knowledge.yaml#/components/schemas/Document"
+    },
+    {
+      "name": "other_team_document",
+      "kind": "forbidden",
+      "description": "Документ чужой команды: 403 без названия и других сведений о документе.",
+      "match": {
+        "path_params": {
+          "doc_id": "kb_auto_release_process"
+        }
+      },
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "doc_id": "kb_auto_release_process"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 403,
+        "body": {
+          "error": {
+            "code": "forbidden",
+            "message": "У тебя нет доступа к этому документу."
+          }
+        }
+      }
+    },
+    {
+      "name": "unavailable",
+      "kind": "unavailable",
+      "description": "Сервис недоступен.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "path_params": {
+          "doc_id": "kb_absence_rules"
+        },
+        "body": null
+      },
+      "response": {
+        "status": 503,
+        "body": {
+          "error": {
+            "code": "unavailable",
+            "message": "Сервис временно недоступен. Попробуй ещё раз чуть позже."
+          }
+        }
+      }
+    },
+    {
+      "name": "no_token",
+      "kind": "forbidden",
+      "request": {
+        "headers": {},
+        "body": null,
+        "path_params": {
+          "doc_id": "kb_absence_rules"
+        }
+      },
+      "response": {
+        "status": 401,
+        "body": {
+          "error": {
+            "code": "unauthorized",
+            "message": "Войди снова."
+          }
+        }
+      }
+    },
+    {
+      "name": "missing_document",
+      "kind": "not_found",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": null,
+        "path_params": {
+          "doc_id": "kb_absence_rules"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "error": {
+            "code": "not_found",
+            "message": "Документ не найден."
+          }
+        }
+      }
+    }
+  ]
+}

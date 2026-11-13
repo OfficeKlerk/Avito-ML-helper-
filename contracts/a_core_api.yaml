@@ -111,6 +111,25 @@ paths:
         core-api сохраняет сообщение, вызывает agent (контракт B) и сохраняет ответ.
         Если agent недоступен, возвращается 200 с `assistant_message.status` = `degraded` или `error`
         и понятным текстом — не 5xx.
+        Ключ действует в пределах пользователя и операции. Повтор того же ключа и текста
+        возвращает сохранённый ChatExchange без повторного вызова агента или создания черновика.
+        Другой текст с тем же ключом даёт 409. Пока исходный ход выполняется, повтор с тем же
+        ключом и текстом получает 429 и может быть повторён. Без ключа поведение прежнее.
+        Пара X-Product-Session-Id и X-Product-Scenario-Id связывает чат с метриками.
+        При повторе сервер сохраняет исходную корреляцию.
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: false
+          schema: { type: string, minLength: 8, maxLength: 128 }
+        - name: X-Product-Session-Id
+          in: header
+          description: Передаётся вместе с X-Product-Scenario-Id. Неполная пара или неверный UUID дают 422.
+          schema: { type: string, format: uuid }
+        - name: X-Product-Scenario-Id
+          in: header
+          description: Идентификатор прохождения сценария из ProductEventInput.
+          schema: { type: string, format: uuid }
       requestBody:
         required: true
         content:
@@ -119,10 +138,13 @@ paths:
       responses:
         "200":
           description: Сохранённое сообщение пользователя и ответ помощника
+          headers:
+            X-Request-Id: { $ref: "#/components/headers/RequestId" }
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ChatExchange" }
         "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
         "422": { $ref: "#/components/responses/Error" }
         "429": { $ref: "#/components/responses/Error" }
 
@@ -207,7 +229,96 @@ paths:
               schema: { $ref: "#/components/schemas/NotificationList" }
         "401": { $ref: "#/components/responses/Error" }
 
+  /api/knowledge/documents/{doc_id}:
+    get:
+      operationId: knowledge_document_get
+      summary: Прочитать документ из ответа помощника
+      description: >
+        core-api передаёт JWT пользователя и идентификатор запроса в knowledge-service.
+        Ответ сохраняет формат документа E. Закрытые метаданные и текст не возвращаются
+        при отказе. Ответы не кешируются между пользователями.
+      parameters:
+        - name: doc_id
+          in: path
+          required: true
+          schema: { $ref: "common.yaml#/components/schemas/DocId" }
+      responses:
+        "200":
+          description: Документ с датой обновления и дисклеймером
+          headers:
+            X-Request-Id: { $ref: "#/components/headers/RequestId" }
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema: { $ref: "e_knowledge.yaml#/components/schemas/Document" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
+
+  /api/notifications/{notification_id}:
+    patch:
+      operationId: notification_mark_read
+      summary: Отметить своё уведомление прочитанным
+      description: >
+        Изменение сохраняется. Повтор возвращает ту же запись с read=true.
+        Чужой и отсутствующий идентификатор одинаково возвращают 404.
+      parameters:
+        - name: notification_id
+          in: path
+          required: true
+          schema: { type: string, pattern: "^ntf_[a-z0-9_]+$" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NotificationReadPatch" }
+      responses:
+        "200":
+          description: Уведомление после обновления
+          headers:
+            X-Request-Id: { $ref: "#/components/headers/RequestId" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Notification" }
+        "401": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
+  /api/metrics/events:
+    post:
+      operationId: product_event_create
+      summary: Записать событие использования помощника
+      description: >
+        Повтор event_id того же пользователя с теми же полями возвращает прежний результат.
+        Повтор event_id с другими полями даёт 409. Идентификаторы сессии и прохождения
+        сценария случайные. Время события назначает сервер. Ответ агента, подтверждение
+        и итог действия фиксирует сервер по сохранённым данным. Для связки событий
+        сервер сохраняет идентификаторы сценария с сообщением и созданными карточками. Клиент передаёт только
+        разрешённые события, без текста диалога, JWT и паролей в теле.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ProductEventInput" }
+      responses:
+        "200":
+          description: Событие сохранено или уже было принято
+          headers:
+            X-Request-Id: { $ref: "#/components/headers/RequestId" }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductEventReceipt" }
+        "401": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+
 components:
+  headers:
+    RequestId:
+      description: Идентификатор HTTP-запроса для диагностики. При повторе может отличаться от первоначального.
+      schema: { $ref: "common.yaml#/components/schemas/RequestId" }
   securitySchemes:
     bearer:
       type: http
@@ -223,6 +334,8 @@ components:
   responses:
     Error:
       description: Ошибка в едином формате
+      headers:
+        X-Request-Id: { $ref: "#/components/headers/RequestId" }
       content:
         application/json:
           schema: { $ref: "common.yaml#/components/schemas/ErrorResponse" }
@@ -461,3 +574,27 @@ components:
         items:
           type: array
           items: { $ref: "#/components/schemas/Notification" }
+
+    NotificationReadPatch:
+      type: object
+      required: [read]
+      additionalProperties: false
+      properties:
+        read: { type: boolean, const: true }
+    ProductEventInput:
+      type: object
+      required: [event_id, session_id, scenario_id, scenario, event]
+      additionalProperties: false
+      properties:
+        event_id: { type: string, format: uuid }
+        session_id: { type: string, format: uuid }
+        scenario_id: { type: string, format: uuid }
+        scenario: { type: string, enum: [onboarding, knowledge, absence, access] }
+        event: { type: string, enum: [scenario_started, source_opened, human_help_requested] }
+    ProductEventReceipt:
+      type: object
+      required: [event_id, recorded_at]
+      additionalProperties: false
+      properties:
+        event_id: { type: string, format: uuid }
+        recorded_at: { type: string, format: date-time }
