@@ -2,7 +2,7 @@ import { defineConfig } from "@playwright/test";
 
 export default defineConfig({
   testDir: ".",
-  outputDir: "../../reports/i2-playwright",
+  outputDir: process.env.I34_PROJECT ? "../../reports/i34-playwright" : "../../reports/i2-playwright",
   reporter: "list",
   timeout: 90_000,
   expect: { timeout: 10_000 },

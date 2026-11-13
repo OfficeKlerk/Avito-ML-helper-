@@ -1,0 +1,4 @@
+services:
+  corp-mock:
+    ports:
+      - "127.0.0.1:${CORP_MOCK_PORT}:8070"
