@@ -5,11 +5,13 @@ import { ApiError, call, type Schemas } from "../../shared/api/client";
 import { useApiData, type Load } from "../../shared/api/useApiData";
 import { Button, ErrorMessage, Loading, Status } from "../../shared/ui/controls";
 import { describeDue } from "./dates";
+import { adaptationRefreshInterval, taskContext, taskPath } from "./taskLinks";
 
 type Task = Schemas["Task"];
 type TaskStatus = Task["status"];
 
-const loadPlan: Load<Schemas["Onboarding"]> = (api, signal) => call(api.GET("/api/onboarding", { signal }));
+const loadPlan: Load<Schemas["Onboarding"]> = (api, signal) =>
+  call(api.GET("/api/onboarding", { signal, cache: "no-store" }));
 
 const TASK_STATUS: Record<TaskStatus, [string, "neutral" | "active" | "success" | "danger"]> = {
   todo: ["К выполнению", "neutral"], in_progress: ["В работе", "active"], done: ["Выполнено", "success"], blocked: ["Заблокировано", "danger"],
@@ -22,19 +24,34 @@ const MOVES: [TaskStatus, string][] = [["in_progress", "Взять в работ
 export function OnboardingPage() {
   const { taskId } = useParams();
   const { api } = useSession();
-  const { state, reload } = useApiData(api, loadPlan);
+  const { state, reload, replace } = useApiData(api, loadPlan, adaptationRefreshInterval);
+
+  function updateTask(updated: Task) {
+    replace((plan) => ({
+      ...plan,
+      stages: plan.stages.map((stage) => ({
+        ...stage,
+        tasks: stage.tasks.map((task) => task.id === updated.id ? updated : task),
+      })),
+    }));
+    reload();
+  }
 
   let content;
   if (state.status === "loading") content = <Loading />;
   else if (state.status === "error") content = <ErrorMessage onRetry={reload}>{state.message}</ErrorMessage>;
-  else if (taskId) content = <TaskDetail plan={state.data} taskId={taskId} onChanged={reload} />;
+  else if (taskId) content = <TaskDetail plan={state.data} taskId={taskId} onChanged={updateTask} />;
   else content = <Plan plan={state.data} />;
-  return <section className="page-stack"><h1>Адаптация</h1>{content}</section>;
+  return <section className="page-stack"><h1>Адаптация</h1>
+    {state.status === "ready" && state.refreshError &&
+      <ErrorMessage onRetry={reload}>Не удалось обновить план. {state.refreshError}</ErrorMessage>}
+    {content}
+  </section>;
 }
 
 function Plan({ plan }: { plan: Schemas["Onboarding"] }) {
-  if (!plan.stages.length) return <div className="panel empty-state"><p>Плана адаптации пока нет. Если это ошибка, напиши наставнику.</p></div>;
-  const allDone = plan.stages.every((stage) => stage.status === "done");
+  if (!plan.stages.some((stage) => stage.tasks.length)) return <div className="panel empty-state"><p>Плана адаптации пока нет. Если это ошибка, напиши наставнику.</p></div>;
+  const allDone = plan.stages.every((stage) => stage.tasks.every((task) => task.status === "done"));
   return <>
     <div className="panel content-panel">
       <div className="card-heading"><h2>Прогресс</h2><strong>{plan.progress}%</strong></div>
@@ -43,7 +60,7 @@ function Plan({ plan }: { plan: Schemas["Onboarding"] }) {
     <section className="panel content-panel" aria-labelledby="next-steps">
       <h2 id="next-steps">Что сделать дальше</h2>
       {plan.next_steps.length ? <ol className="next-steps">{plan.next_steps.map((step) => <li key={step.task_id}>
-        <Link to={`/onboarding/tasks/${encodeURIComponent(step.task_id)}`}>{step.title}</Link>
+        <Link to={taskPath(step.task_id)}>{step.title}</Link>
         <p className="muted">{step.reason}</p>
       </li>)}</ol> : <p className="muted">{allDone ? "Все задачи выполнены." : "Срочных шагов нет."}</p>}
     </section>
@@ -53,7 +70,7 @@ function Plan({ plan }: { plan: Schemas["Onboarding"] }) {
         <Status tone={stage.status === "in_progress" ? "active" : stage.status === "done" ? "success" : "neutral"}>{STAGE_STATUS[stage.status]}</Status>
       </div>
       <ul className="plain-list row-list">{stage.tasks.map((task) => <li key={task.id}>
-        <Link to={`/onboarding/tasks/${encodeURIComponent(task.id)}`}>{task.title}</Link>
+        <Link to={taskPath(task.id)}>{task.title}</Link>
         <TaskBadges task={task} />
       </li>)}</ul>
     </section>)}
@@ -69,7 +86,7 @@ function TaskBadges({ task }: { task: Task }) {
   </span>;
 }
 
-function TaskDetail({ plan, taskId, onChanged }: { plan: Schemas["Onboarding"]; taskId: string; onChanged: () => void }) {
+function TaskDetail({ plan, taskId, onChanged }: { plan: Schemas["Onboarding"]; taskId: string; onChanged: (task: Task) => void }) {
   const task = plan.stages.flatMap((stage) => stage.tasks).find((item) => item.id === taskId);
   return <div className="panel content-panel">
     <Link to="/onboarding">Все задачи</Link>
@@ -77,9 +94,13 @@ function TaskDetail({ plan, taskId, onChanged }: { plan: Schemas["Onboarding"]; 
       <div className="card-heading"><h2>{task.title}</h2><TaskBadges task={task} /></div>
       {task.description && <p>{task.description}</p>}
       {task.links.length > 0 && <ul className="plain-list">{task.links.map((link) => <li key={link.url}><SafeLink {...link} /></li>)}</ul>}
-      {task.related_action_id && <p><Link to={`/actions/${encodeURIComponent(task.related_action_id)}`}>Связанная заявка</Link></p>}
+      <div className="button-row">
+        {task.related_action_id && <Link to={`/actions/${encodeURIComponent(task.related_action_id)}${taskContext(task.id)}`}>Связанная заявка</Link>}
+        <Link to={`/chat${taskContext(task.id)}`}
+          state={{ question: `Помоги с задачей «${task.title}». Что нужно сделать?` }}>Спросить в чате</Link>
+      </div>
       {/* key: после обновления плана сбрасываем ошибку прошлой попытки */}
-      <StatusControl key={task.status} task={task} onChanged={onChanged} />
+      <StatusControl key={`${task.id}:${task.status}`} task={task} onChanged={onChanged} />
     </> : <p role="status">Задача не найдена.</p>}
   </div>;
 }
@@ -90,7 +111,7 @@ export function SafeLink({ title, url }: Schemas["Link"]) {
   return <span>{title}{url.startsWith("kb://") ? " — документ базы знаний" : ""}</span>;
 }
 
-function StatusControl({ task, onChanged }: { task: Task; onChanged: () => void }) {
+function StatusControl({ task, onChanged }: { task: Task; onChanged: (task: Task) => void }) {
   const { api } = useSession();
   const [pending, setPending] = useState<TaskStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -98,10 +119,13 @@ function StatusControl({ task, onChanged }: { task: Task; onChanged: () => void 
     setPending(status);
     setError(null);
     try {
-      await call(api.PATCH("/api/onboarding/tasks/{task_id}", { params: { path: { task_id: task.id } }, body: { status } }));
-      onChanged(); // показываем то, что сохранил сервер, вместе с новым прогрессом и шагами
+      const updated = await call(api.PATCH("/api/onboarding/tasks/{task_id}", {
+        params: { path: { task_id: task.id } }, body: { status },
+      }));
+      onChanged(updated);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Не удалось изменить статус. Попробуй ещё раз.");
+    } finally {
       setPending(null);
     }
   }

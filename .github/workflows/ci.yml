@@ -2,6 +2,10 @@
 # Платная LLM здесь не нужна: агент работает без модели. Прогон с моделью — только вручную (llm-eval).
 name: CI
 
+defaults:
+  run:
+    shell: bash
+
 on:
   pull_request:
   push:

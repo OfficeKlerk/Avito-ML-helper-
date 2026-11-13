@@ -4,17 +4,19 @@ import { useSession } from "../../app/session";
 import { ApiError, call, type Schemas } from "../../shared/api/client";
 import { useApiData, type Load } from "../../shared/api/useApiData";
 import { Button, ErrorMessage, Loading, Status } from "../../shared/ui/controls";
+import { adaptationRefreshInterval, taskContext, taskPath } from "../onboarding/taskLinks";
 
 type Notification = Schemas["Notification"];
 
-const loadNotifications: Load<Schemas["NotificationList"]> = (api, signal) => call(api.GET("/api/notifications", { signal }));
+const loadNotifications: Load<Schemas["NotificationList"]> = (api, signal) =>
+  call(api.GET("/api/notifications", { signal, cache: "no-store" }));
 const when = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Moscow" });
 
 /** O4: напоминания и смены статусов заявок. Прочтение сохраняет core-api, после перезагрузки оно на месте. */
 export function NotificationsPage() {
   const { notificationId } = useParams();
   const { api } = useSession();
-  const { state, reload, replace } = useApiData(api, loadNotifications);
+  const { state, reload, replace } = useApiData(api, loadNotifications, adaptationRefreshInterval);
 
   let content;
   if (state.status === "loading") content = <Loading />;
@@ -23,7 +25,9 @@ export function NotificationsPage() {
     // Один id — одна строка, даже если сервер или повтор вернули запись дважды.
     const items = [...new Map(state.data.items.map((item) => [item.id, item])).values()];
     const visible = notificationId ? items.filter((item) => item.id === notificationId) : items;
-    const markRead = (updated: Notification) => replace({ items: items.map((item) => item.id === updated.id ? updated : item) });
+    const markRead = (updated: Notification) => replace((current) => ({
+      items: current.items.map((item) => item.id === updated.id ? updated : item),
+    }));
     content = <>
       {notificationId && <Link to="/notifications">Все уведомления</Link>}
       {visible.length ? <ul className="plain-list card-list">{visible.map((item) =>
@@ -31,7 +35,11 @@ export function NotificationsPage() {
         : <div className="panel empty-state"><p>{notificationId ? "Уведомление не найдено." : "Уведомлений пока нет."}</p></div>}
     </>;
   }
-  return <section className="page-stack"><h1>Уведомления</h1>{content}</section>;
+  return <section className="page-stack"><h1>Уведомления</h1>
+    {state.status === "ready" && state.refreshError &&
+      <ErrorMessage onRetry={reload}>Не удалось обновить уведомления. {state.refreshError}</ErrorMessage>}
+    {content}
+  </section>;
 }
 
 function NotificationItem({ item, single, onRead }: { item: Notification; single: boolean; onRead: (item: Notification) => void }) {
@@ -60,8 +68,8 @@ function NotificationItem({ item, single, onRead }: { item: Notification; single
     <p>{item.text}</p>
     <div className="button-row">
       {!single && <Link to={`/notifications/${encodeURIComponent(item.id)}`} aria-label={`Открыть уведомление «${item.text}»`}>Открыть</Link>}
-      {item.task_id && <Link to={`/onboarding/tasks/${encodeURIComponent(item.task_id)}`}>К задаче</Link>}
-      {item.action_id && <Link to={`/actions/${encodeURIComponent(item.action_id)}`}>К заявке</Link>}
+      {item.task_id && <Link to={taskPath(item.task_id)}>К задаче</Link>}
+      {item.action_id && <Link to={`/actions/${encodeURIComponent(item.action_id)}${item.task_id ? taskContext(item.task_id) : ""}`}>К заявке</Link>}
       {!item.read && <Button tone="secondary" busy={busy} busyLabel="Отмечаем…" onClick={markRead}>Отметить прочитанным</Button>}
     </div>
     {error && <ErrorMessage>{error}</ErrorMessage>}
