@@ -1,9 +1,15 @@
 import { defineConfig } from "@playwright/test";
 
+const outputDir = process.env.I5_LIVE_MODEL ? "i5-playwright" :
+  process.env.I6_RECOVERY ? "i6-playwright" :
+  process.env.I34_PROJECT ? "i34-playwright" : "i2-playwright";
+
 export default defineConfig({
   testDir: ".",
-  outputDir: process.env.I34_PROJECT ? "../../reports/i34-playwright" : "../../reports/i2-playwright",
-  reporter: "list",
+  outputDir: `../../reports/${outputDir}`,
+  reporter: process.env.I6_RECOVERY || process.env.I5_LIVE_MODEL
+    ? [["list"], ["json", { outputFile: `../../reports/${outputDir}-result.json` }]]
+    : "list",
   timeout: 90_000,
   expect: { timeout: 10_000 },
   use: {
