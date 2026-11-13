@@ -105,6 +105,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=core&sslmode=disable
       AGENT_URL: ${CORE_AGENT_URL:-http://agent:8090}
       CORP_MOCK_URL: ${CORE_CORP_MOCK_URL:-http://corp-mock:8070}
+      KNOWLEDGE_URL: ${CORE_KNOWLEDGE_URL:-http://knowledge-service:8060}
       SEED_DIR: /data/seed
     volumes:
       - ./data:/data:ro
@@ -114,6 +115,7 @@ services:
       postgres: { condition: service_healthy }
       agent: { condition: service_healthy }
       corp-mock: { condition: service_healthy }
+      knowledge-service: { condition: service_healthy }
     healthcheck:
       <<: *healthcheck
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]

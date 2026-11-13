@@ -15,6 +15,9 @@ import (
 
 var ErrChatBusy = errors.New("chat busy")
 
+// ErrKeyConflict — Idempotency-Key уже использован для другого текста.
+var ErrKeyConflict = errors.New("idempotency key reused with another text")
+
 type HistoryItem struct {
 	Role string `json:"role"`
 	Text string `json:"text"`
@@ -94,7 +97,9 @@ func (s *Store) WithChat(ctx context.Context, ownerID string, run func(*ChatSess
 	return run(&ChatSession{conn: conn, ownerID: ownerID})
 }
 
-func (s *ChatSession) Context(ctx context.Context, limit int) ([]onboarding.Stage, []HistoryItem, json.RawMessage, error) {
+// Context — план, последние сообщения и состояние диалога. excludeID — сообщение текущего хода,
+// если оно уже сохранено (продолжение прерванного хода): в историю для агента оно не входит.
+func (s *ChatSession) Context(ctx context.Context, limit int, excludeID string) ([]onboarding.Stage, []HistoryItem, json.RawMessage, error) {
 	stages, err := loadStages(ctx, s.conn, s.ownerID)
 	if err != nil {
 		return nil, nil, nil, err
@@ -103,10 +108,10 @@ func (s *ChatSession) Context(ctx context.Context, limit int) ([]onboarding.Stag
 	err = s.conn.QueryRowContext(ctx, `
 		SELECT COALESCE((
 		    SELECT jsonb_agg(jsonb_build_object('role', role, 'text', text) ORDER BY created_at, id)
-		    FROM (SELECT id, role, text, created_at FROM core.messages WHERE owner_id = $1
+		    FROM (SELECT id, role, text, created_at FROM core.messages WHERE owner_id = $1 AND id <> $3
 		          ORDER BY created_at DESC, id DESC LIMIT $2) recent
 		), '[]'), COALESCE((SELECT state FROM core.chat_state WHERE owner_id = $1), 'null')
-	`, s.ownerID, limit).Scan(&historyJSON, &state)
+	`, s.ownerID, limit, excludeID).Scan(&historyJSON, &state)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -115,18 +120,63 @@ func (s *ChatSession) Context(ctx context.Context, limit int) ([]onboarding.Stag
 	return stages, history, state, err
 }
 
-func (s *ChatSession) AddUserMessage(ctx context.Context, id, text string) (Message, error) {
-	msg := Message{ID: id, Role: "user", Text: text, Status: "ok",
+func userMessage(id, text string) Message {
+	return Message{ID: id, Role: "user", Text: text, Status: "ok",
 		Sources: []Source{}, Suggestions: []string{}, Actions: []json.RawMessage{}}
+}
+
+// AddUserMessage сохраняет сообщение. С ключом в том же запросе запоминается начатый ход.
+func (s *ChatSession) AddUserMessage(ctx context.Context, id, text, key, requestID string) (Message, error) {
+	msg := userMessage(id, text)
 	err := s.conn.QueryRowContext(ctx, `
-		INSERT INTO core.messages (id, owner_id, role, text, status, created_at)
-		VALUES ($1, $2, 'user', $3, 'ok', clock_timestamp()) RETURNING created_at
-	`, id, s.ownerID, text).Scan(&msg.CreatedAt)
+		WITH msg AS (
+			INSERT INTO core.messages (id, owner_id, role, text, status, created_at)
+			VALUES ($1, $2, 'user', $3, 'ok', clock_timestamp()) RETURNING created_at
+		), turn AS (
+			INSERT INTO core.chat_requests (owner_id, idempotency_key, request_id, user_message_id)
+			SELECT $2, $4, $5, $1 WHERE $4 <> ''
+		)
+		SELECT created_at FROM msg
+	`, id, s.ownerID, text, key, requestID).Scan(&msg.CreatedAt)
 	return msg, err
 }
 
+// Turn — ход, начатый раньше с тем же ключом.
+type Turn struct {
+	RequestID   string
+	UserMessage Message
+	// Response — сохранённый ответ; nil, если ход прервался до ответа помощника.
+	Response json.RawMessage
+}
+
+// Turn ищет ход по ключу. found=false — ключ новый; другой текст с тем же ключом — ErrKeyConflict.
+func (s *ChatSession) Turn(ctx context.Context, key, text string) (turn Turn, found bool, err error) {
+	var storedText string
+	var response []byte
+	err = s.conn.QueryRowContext(ctx, `
+		SELECT r.request_id, r.response, m.id, m.text, m.created_at
+		FROM core.chat_requests r JOIN core.messages m ON m.owner_id = r.owner_id AND m.id = r.user_message_id
+		WHERE r.owner_id = $1 AND r.idempotency_key = $2
+	`, s.ownerID, key).Scan(&turn.RequestID, &response, &turn.UserMessage.ID, &storedText, &turn.UserMessage.CreatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Turn{}, false, nil
+	}
+	if err != nil {
+		return Turn{}, false, err
+	}
+	if storedText != text {
+		return Turn{}, true, ErrKeyConflict
+	}
+	createdAt := turn.UserMessage.CreatedAt
+	turn.UserMessage = userMessage(turn.UserMessage.ID, storedText)
+	turn.UserMessage.CreatedAt = createdAt
+	turn.Response = response
+	return turn, true, nil
+}
+
 // Finish сохраняет ответ, карточки, предложения по задачам и состояние диалога атомарно.
-func (s *ChatSession) Finish(ctx context.Context, userMessage Message, reply Reply) (Message, error) {
+// С ключом в той же транзакции запоминается весь ответ хода — повтор вернёт его без агента.
+func (s *ChatSession) Finish(ctx context.Context, userMessage Message, reply Reply, key string) (Message, error) {
 	tx, err := s.conn.BeginTx(ctx, nil)
 	if err != nil {
 		return Message{}, err
@@ -201,6 +251,18 @@ func (s *ChatSession) Finish(ctx context.Context, userMessage Message, reply Rep
 			return Message{}, err
 		}
 		events = append(events, statusEvent{"task", update.TaskID, oldStatus, update.Status})
+	}
+	if key != "" {
+		exchange, err := json.Marshal(map[string]Message{"user_message": userMessage, "assistant_message": msg})
+		if err != nil {
+			return Message{}, err
+		}
+		_, err = tx.ExecContext(ctx, `
+			UPDATE core.chat_requests SET response = $3 WHERE owner_id = $1 AND idempotency_key = $2
+		`, s.ownerID, key, string(exchange))
+		if err != nil {
+			return Message{}, err
+		}
 	}
 	if err := tx.Commit(); err != nil {
 		return Message{}, err

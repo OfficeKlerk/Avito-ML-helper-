@@ -36,3 +36,16 @@ func (s *Store) CreateOverdueReminders(ctx context.Context, now time.Time) (int6
 	}
 	return result.RowsAffected()
 }
+
+// MarkNotificationRead отмечает уведомление владельца прочитанным. Чужое и несуществующее — sql.ErrNoRows.
+func (s *Store) MarkNotificationRead(ctx context.Context, ownerID string, seq int64) (json.RawMessage, error) {
+	var item json.RawMessage
+	err := s.db.QueryRowContext(ctx, `
+		WITH item AS (
+			UPDATE core.notifications SET read = true WHERE owner_id = $1 AND id = $2
+			RETURNING 'ntf_' || id AS id, kind, text, task_id, action_id, created_at, read
+		)
+		SELECT to_jsonb(item) FROM item
+	`, ownerID, seq).Scan(&item)
+	return item, err
+}

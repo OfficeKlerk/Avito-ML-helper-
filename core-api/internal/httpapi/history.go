@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"aibuddy/core-api/internal/store"
 )
@@ -52,4 +53,31 @@ func (a api) getAction(w http.ResponseWriter, r *http.Request, u store.User) {
 		return
 	}
 	WriteJSON(w, http.StatusOK, action)
+}
+
+func (a api) markNotificationRead(w http.ResponseWriter, r *http.Request, u store.User) {
+	var input struct {
+		Read *bool `json:"read"`
+	}
+	if !readJSON(w, r, 1<<10, &input) || input.Read == nil || !*input.Read {
+		WriteError(w, http.StatusUnprocessableEntity, "validation", "Укажи read=true.")
+		return
+	}
+	// Чужое, несуществующее и неверное уведомление неразличимы.
+	notFound := func() { WriteError(w, http.StatusNotFound, "not_found", "Уведомление не найдено.") }
+	id, found := strings.CutPrefix(r.PathValue("notification_id"), "ntf_")
+	seq, err := strconv.ParseUint(id, 10, 63)
+	if !found || err != nil {
+		notFound()
+		return
+	}
+	item, err := a.db.MarkNotificationRead(r.Context(), u.ID, int64(seq))
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+		notFound()
+	case err != nil:
+		internalError(w)
+	default:
+		WriteJSON(w, http.StatusOK, item)
+	}
 }

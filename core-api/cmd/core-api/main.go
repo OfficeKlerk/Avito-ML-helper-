@@ -63,9 +63,10 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		port = "8080"
 	}
 	deps := httpapi.Dependencies{
-		Logger: logger,
-		Agent:  clients.NewAgent(envURL("AGENT_URL", "http://agent:8090")),
-		Corp:   clients.NewCorp(envURL("CORP_MOCK_URL", "http://corp-mock:8070")),
+		Logger:    logger,
+		Agent:     clients.NewAgent(envURL("AGENT_URL", "http://agent:8090")),
+		Corp:      clients.NewCorp(envURL("CORP_MOCK_URL", "http://corp-mock:8070")),
+		Knowledge: clients.NewKnowledge(envURL("KNOWLEDGE_URL", "http://knowledge-service:8060")),
 	}
 	data := store.New(db)
 	now := func() time.Time { return time.Now().In(location) }
