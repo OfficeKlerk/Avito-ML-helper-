@@ -1,7 +1,8 @@
 {
   "private": true,
   "scripts": {
-    "test": "playwright test"
+    "test": "playwright test onboarding.spec.mjs",
+    "test:requests": "node run-requests.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.65.0"
