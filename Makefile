@@ -9,7 +9,7 @@ TEST_CONTEXTS := --build-context contracts=./contracts --build-context fixtures=
 help: ## Показать команды
 	@grep -E '^[a-zA-Z_%-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-22s %s\n", $$1, $$2}'
 
-up: ## Собрать и запустить четыре сервиса и PostgreSQL, дождаться готовности
+up: ## Собрать и запустить сервисы, интерфейс и PostgreSQL, дождаться готовности
 	$(COMPOSE) up -d --build --wait
 
 down: ## Остановить всё, включая заглушки (данные PostgreSQL сохраняются)

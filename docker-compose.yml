@@ -118,6 +118,18 @@ services:
       <<: *healthcheck
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
 
+  web-app:
+    build: { context: ./web-app, target: runtime }
+    environment:
+      CORE_API_URL: ${WEB_CORE_API_URL:-http://core-api:8080}
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      core-api: { condition: service_healthy }
+    healthcheck:
+      <<: *healthcheck
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
+
   # ---- Заглушки соседних сервисов по примерам из fixtures/ (профиль stubs) ----
   # Чтобы разрабатывать сервис против заглушки, укажи ему её адрес, например AGENT_URL=http://stub-agent:8090.
   stub-core-api:

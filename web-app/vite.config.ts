@@ -13,6 +13,6 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test-setup.ts"],
     // Файлы без тестов тоже входят в отчёт с 0%, иначе покрытие завышено.
-    coverage: { include: ["src/**/*.{ts,tsx}"], exclude: ["src/**/*.test.tsx", "src/test-setup.ts", "src/vite-env.d.ts"] },
+    coverage: { include: ["src/**/*.{ts,tsx}"], exclude: ["src/**/*.test.{ts,tsx}", "src/test-setup.ts", "src/vite-env.d.ts", "src/shared/api/schema.ts"] },
   },
 });
