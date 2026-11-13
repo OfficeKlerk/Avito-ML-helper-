@@ -11,8 +11,18 @@ const labels = {
   failed: ["Ошибка отправки", "danger"],
 } as const satisfies Record<Schemas["ActionCard"]["status"], readonly [string, string]>;
 
+// Согласование доступа — ещё не выдача: «выдан» только когда сервер подтвердил fulfilled_at.
+type Tone = "neutral" | "active" | "success" | "warning" | "danger";
+
+function statusLabel(action: Schemas["ActionCard"]): readonly [string, Tone] {
+  if (action.type === "access_request" && action.status === "approved") {
+    return action.fulfilled_at ? ["Доступ выдан", "success"] : ["Согласована, доступ ещё не выдан", "warning"];
+  }
+  return labels[action.status];
+}
+
 export function ActionCard({ action, footer }: { action: Schemas["ActionCard"]; footer?: ReactNode }) {
-  const [label, tone] = labels[action.status];
+  const [label, tone] = statusLabel(action);
   return (
     <article className="panel action-card">
       <div className="card-heading">

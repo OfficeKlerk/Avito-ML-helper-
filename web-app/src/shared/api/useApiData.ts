@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError, type Api } from "./client";
 
 export type Load<T> = (api: Api, signal: AbortSignal) => Promise<T>;
@@ -8,12 +8,16 @@ type State<T> = { status: "loading" } | { status: "error"; message: string } | {
 export function useApiData<T>(api: Api, load: Load<T>) {
   const [state, setState] = useState<State<T>>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
+  // Ответ мутации новее чтения, начатого до неё: такое чтение не должно вернуть старые данные.
+  const replaced = useRef(0);
   useEffect(() => {
     const controller = new AbortController();
+    const started = replaced.current;
+    const current = () => !controller.signal.aborted && started === replaced.current;
     load(api, controller.signal).then(
-      (data) => { if (!controller.signal.aborted) setState({ status: "ready", data }); },
+      (data) => { if (current()) setState({ status: "ready", data }); },
       (error: unknown) => {
-        if (!controller.signal.aborted) {
+        if (current()) {
           setState({ status: "error", message: error instanceof ApiError ? error.message : "Не удалось загрузить данные." });
         }
       },
@@ -25,6 +29,9 @@ export function useApiData<T>(api: Api, load: Load<T>) {
     setState((current) => current.status === "error" ? { status: "loading" } : current);
     setAttempt((n) => n + 1);
   }, []);
-  const replace = useCallback((data: T) => setState({ status: "ready", data }), []);
+  const replace = useCallback((data: T) => {
+    replaced.current += 1;
+    setState({ status: "ready", data });
+  }, []);
   return { state, reload, replace };
 }

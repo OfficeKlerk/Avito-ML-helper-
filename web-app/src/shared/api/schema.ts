@@ -353,6 +353,11 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             updated_at: string;
+            /**
+             * Format: date-time
+             * @description Когда доступ фактически выдан; только для access_request. null — ещё не выдан. Согласование (approved) само по себе выдачей не считается. Необязательно для старых клиентов.
+             */
+            fulfilled_at?: string | null;
         };
         ActionCardList: {
             actions: components["schemas"]["ActionCard"][];
