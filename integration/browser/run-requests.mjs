@@ -7,7 +7,8 @@ import { parseEnv } from "node:util";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const recovery = process.argv[2] === "recovery";
-const liveModel = process.argv[2] === "model";
+const performanceCheck = ["performance", "performance-model"].includes(process.argv[2]);
+const liveModel = ["model", "performance-model"].includes(process.argv[2]);
 const settings = liveModel ? parseEnv(readFileSync(join(root, ".env"), "utf8")) : {};
 if (liveModel && ["LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"].some(name => !settings[name]?.trim())) {
   throw new Error("В .env нужны LLM_BASE_URL, LLM_MODEL и LLM_API_KEY для прогона I5.");
@@ -29,6 +30,7 @@ const env = {
   I34_PROJECT: project,
   I6_RECOVERY: recovery ? "1" : "",
   I5_LIVE_MODEL: liveModel ? settings.LLM_MODEL : "",
+  Q3_PERFORMANCE: performanceCheck ? (liveModel ? "model" : "rules") : "",
 };
 env.I2_BASE_URL = `http://127.0.0.1:${env.WEB_PORT}`;
 env.I34_CORP_URL = `http://127.0.0.1:${env.CORP_MOCK_PORT}`;
@@ -52,8 +54,10 @@ try {
     const args = [
       "integration/browser/node_modules/@playwright/test/cli.js",
       "test", "--config", "integration/browser/playwright.config.mjs", "--workers", "1",
-      recovery ? "--grep" : liveModel ? "--grep" : "--grep-invert",
-      recovery ? "I6:" : liveModel ? "I5:" : "I[56]:", "requests.spec.mjs",
+      ...(performanceCheck ? ["performance.spec.mjs"] : [
+        recovery || liveModel ? "--grep" : "--grep-invert",
+        recovery ? "I6:" : liveModel ? "I5:" : "I[56]:", "requests.spec.mjs",
+      ]),
     ];
     const result = spawnSync(process.execPath, args, { cwd: root, env: browserEnv, stdio: "inherit" });
     if (result.error) console.error(result.error.message);
