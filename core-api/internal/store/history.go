@@ -6,7 +6,7 @@ import (
 )
 
 const actionFields = `a.id, a.type, a.status, a.title, a.fields, a.external_id, a.result, a.error,
-	a.created_at, a.updated_at`
+	a.created_at, a.updated_at, a.fulfilled_at`
 
 func (s *Store) Actions(ctx context.Context, ownerID string) (json.RawMessage, error) {
 	var payload json.RawMessage

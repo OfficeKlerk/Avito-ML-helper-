@@ -5,12 +5,14 @@ import { call, type Schemas } from "../../shared/api/client";
 import { useApiData, type Load } from "../../shared/api/useApiData";
 import { ErrorMessage, Loading } from "../../shared/ui/controls";
 import { ActionItem } from "./ActionItem";
+import { isOpen, usePolling } from "./polling";
 
 const loadActions: Load<Schemas["ActionCardList"]> = (api, signal) => call(api.GET("/api/actions", { signal }));
 
 export function ActionsPage() {
   const { api } = useSession();
   const { state, reload, replace } = useApiData(api, loadActions);
+  usePolling(state.status === "ready" && state.data.actions.some(isOpen), reload);
   let content;
   if (state.status === "loading") content = <Loading />;
   else if (state.status === "error") content = <ErrorMessage onRetry={reload}>{state.message}</ErrorMessage>;
@@ -39,6 +41,7 @@ function ActionDetail({ id }: { id: string }) {
   const load = useCallback<Load<Schemas["ActionCard"]>>((api, signal) =>
     call(api.GET("/api/actions/{action_id}", { signal, params: { path: { action_id: id } } })), [id]);
   const { state, reload, replace } = useApiData(api, load);
+  usePolling(state.status === "ready" && isOpen(state.data), reload);
   if (state.status === "loading") return <Loading />;
   if (state.status === "error") return <ErrorMessage onRetry={reload}>{state.message}</ErrorMessage>;
   return <ActionItem action={state.data} onChange={replace} />;
