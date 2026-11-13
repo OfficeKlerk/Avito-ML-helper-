@@ -26,19 +26,17 @@ x-stub-healthcheck: &stub-healthcheck
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16@sha256:63e83b5a3dc36a917dccb76fe1bd2ac51f1ec9c1deb47ff20d4f04233bf6eae9
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-buddy}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-buddy}
       POSTGRES_DB: ${POSTGRES_DB:-buddy}
-    ports:
-      - "${POSTGRES_PORT:-15432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/00-schemas.sql:ro
     healthcheck:
       <<: *healthcheck
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-buddy} -d ${POSTGRES_DB:-buddy}"]
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
 
   corp-mock:
     build: { context: ./corp-mock, target: runtime }
@@ -50,8 +48,6 @@ services:
       SEED_DIR: /data/seed
     volumes:
       - ./data:/data:ro
-    ports:
-      - "${CORP_MOCK_PORT:-8070}:8070"
     depends_on:
       postgres: { condition: service_healthy }
     healthcheck:
@@ -66,8 +62,6 @@ services:
       KB_DIR: /data/kb
     volumes:
       - ./data:/data:ro
-    ports:
-      - "${KNOWLEDGE_PORT:-8060}:8060"
     healthcheck:
       <<: *healthcheck
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8060/health')"]
@@ -88,8 +82,6 @@ services:
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-25}
       LLM_MAX_TOOL_CALLS: ${LLM_MAX_TOOL_CALLS:-5}
-    ports:
-      - "${AGENT_PORT:-8090}:8090"
     depends_on:
       knowledge-service: { condition: service_healthy }
       corp-mock: { condition: service_healthy }
@@ -109,8 +101,6 @@ services:
       SEED_DIR: /data/seed
     volumes:
       - ./data:/data:ro
-    ports:
-      - "${CORE_API_PORT:-8080}:8080"
     depends_on:
       postgres: { condition: service_healthy }
       agent: { condition: service_healthy }
@@ -125,9 +115,9 @@ services:
     environment:
       CORE_API_URL: ${WEB_CORE_API_URL:-http://core-api:8080}
     ports:
-      - "${WEB_PORT:-3000}:80"
+      - "127.0.0.1:${WEB_PORT:-3000}:80"
     depends_on:
-      core-api: { condition: service_healthy }
+      core-api: { condition: service_healthy, restart: true }
     healthcheck:
       <<: *healthcheck
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1/"]
@@ -138,28 +128,28 @@ services:
     <<: *devkit
     profiles: [stubs]
     environment: { STUB_SERVICE: core-api, STUB_CONTRACTS: "A", PORT: "8080" }
-    ports: ["${STUB_CORE_API_PORT:-18080}:8080"]
+    ports: ["127.0.0.1:${STUB_CORE_API_PORT:-18080}:8080"]
     healthcheck: *stub-healthcheck
 
   stub-agent:
     <<: *devkit
     profiles: [stubs]
     environment: { STUB_SERVICE: agent, STUB_CONTRACTS: "B", PORT: "8090" }
-    ports: ["${STUB_AGENT_PORT:-18090}:8090"]
+    ports: ["127.0.0.1:${STUB_AGENT_PORT:-18090}:8090"]
     healthcheck: *stub-healthcheck
 
   stub-corp-mock:
     <<: *devkit
     profiles: [stubs]
     environment: { STUB_SERVICE: corp-mock, STUB_CONTRACTS: "C,D", PORT: "8070" }
-    ports: ["${STUB_CORP_MOCK_PORT:-18070}:8070"]
+    ports: ["127.0.0.1:${STUB_CORP_MOCK_PORT:-18070}:8070"]
     healthcheck: *stub-healthcheck
 
   stub-knowledge-service:
     <<: *devkit
     profiles: [stubs]
     environment: { STUB_SERVICE: knowledge-service, STUB_CONTRACTS: "E", PORT: "8060" }
-    ports: ["${STUB_KNOWLEDGE_PORT:-18060}:8060"]
+    ports: ["127.0.0.1:${STUB_KNOWLEDGE_PORT:-18060}:8060"]
     healthcheck: *stub-healthcheck
 
   # ---- Проверка контрактов и сквозная проверка (профиль tools) ----

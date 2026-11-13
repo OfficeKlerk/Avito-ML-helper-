@@ -9,3 +9,6 @@ knowledge-service
 core-api
 corp-mock
 docs
+.env
+.env.*
+!.env.example

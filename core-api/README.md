@@ -1,5 +1,7 @@
 # core-api · C1–C9
 
+Прямые вызовы core-api ниже используют локальное дополнение Compose. [Включить локальные порты](../README.md#единый-вход-и-локальная-отладка).
+
 Из корня репозитория запусти `make up`. Для запуска только базы и API подойдёт
 `docker compose up -d --build --wait postgres && docker compose up -d --no-deps --build --wait core-api`.
 При старте core-api применяет встроенные миграции к схеме `core`, затем загружает демоданные.

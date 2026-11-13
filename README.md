@@ -109,28 +109,50 @@ make eval
 
 ## Быстрый старт
 
-Нужны только Docker и `make`.
+Нужен Docker Engine 28+ или Docker Desktop с Linux-контейнерами, Compose v2.24.4+ и BuildKit. Для локального стенда закладывай 2 CPU, 4 ГБ памяти Docker и 10 ГБ свободного диска. `make` нужен для сокращённых команд и тестов.
 
 ```bash
-make up
+docker compose up -d --build --wait
 ```
+
+Открой http://localhost:3000 и войди как `intern_anna` с паролем `buddy2026`. `make up` делает тот же запуск. Без `.env` используются локальные настройки и агент в режиме `mock`. Для изменения настроек скопируй [.env.example](.env.example) в `.env`.
+
+### Единый вход и локальная отладка
+
+nginx отдаёт интерфейс и направляет `/api/…` в core-api с того же адреса. Прямые ссылки на страницы открывают SPA. Для отсутствующих файлов в `/assets/` возвращается 404. По умолчанию на хосте опубликован только интерфейс на `127.0.0.1:3000`. Проверка API через него, например, `GET /api/me` с JWT из входа.
+
+Для прямых запросов к сервисам, PostgreSQL или разработки UI через Vite включи локальное дополнение:
 
 ```bash
-make smoke
+docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d --build --wait
 ```
 
-`make up` собирает и запускает четыре сервиса, интерфейс и PostgreSQL. Интерфейс — http://localhost:3000, вход `intern_anna` / `buddy2026`. `make smoke` дополнительно поднимает заглушки и проходит по сети все примеры контрактов. Остальные команды покажет `make help`.
+Оно открывает на `127.0.0.1` порты core-api 8080, agent 8090, corp-mock 8070, knowledge-service 8060 и PostgreSQL 15432. Порты задаются в `.env`. `make smoke` запускает заглушки отдельно и проверяет контракты внутри сети Compose.
 
-| Сервис | Адрес | Язык | Контракты |
-|---|---|---|---|
-| web-app | http://localhost:3000 | TypeScript, React | клиент A |
-| core-api | http://localhost:8080 | Go | A |
-| agent | http://localhost:8090 | Python, Flask | B |
-| corp-mock | http://localhost:8070 | Go | C (MCP), D |
-| knowledge-service | http://localhost:8060 | Python, Flask | E |
-| PostgreSQL | localhost:15432 | — | схемы `core` и `corp` |
+### Стенд с HTTPS
 
-Порты и настройки меняются в `.env` (пример — [.env.example](.env.example)). Без `.env` всё запускается со значениями по умолчанию и без ключа LLM.
+Привяжи DNS домена к хосту и открой входящие TCP 80 и 443. В отдельной конфигурации стенда задай `PUBLIC_DOMAIN`, свой `JWT_SECRET` длиной от 32 байт и `POSTGRES_PASSWORD`. Для пароля PostgreSQL используй символы, допустимые без кодирования в URL, например случайную hex-строку. Для демостенда с тестовыми аккаунтами и стандартными паролями ограничь вход сетью или IP участников.
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.https.yml up -d --build --wait
+```
+
+Caddy получает и обновляет сертификат, перенаправляет HTTP на HTTPS и передаёт запросы nginx. Публикуются только порты Caddy. Сертификаты сохраняются в томе `tls-data`. Для управления этим стендом передавай оба файла Compose и те же настройки окружения.
+
+### Данные, версии и тестовый сброс
+
+Состояние хранится в томе `pgdata` проекта Compose. При первом старте PostgreSQL создаёт схемы `core` и `corp`, сервисы применяют миграции и загружают демоданные. Повторный запуск сохраняет существующие записи. `docker compose down` и `make down` сохраняют том. Для существующего тома PostgreSQL изменение пароля в `.env` требует отдельно сменить пароль роли в базе.
+
+Базовые образы закреплены по digest. В проекте используются PostgreSQL 16, Go 1.23, Python 3.12, Node 22 и nginx 1.28. Версии Python-пакетов закреплены в `requirements*.txt`, Go-модулей — в `go.mod` и `go.sum`, npm — в `package-lock.json`. Файлы окружения исключены из Git и из сборки интерфейса.
+
+Для отдельного тестового стенда доступны команды:
+
+```bash
+make test-stack-up
+make reset-test-data CONFIRM=ai-buddy-local-test
+```
+
+Интерфейс тестового стенда — http://localhost:13000. Сброс останавливает контейнеры и удаляет том только у проекта `ai-buddy-local-test`. Это имя зарезервировано для тестового стенда. Следующий `make test-stack-up` создаёт чистую тестовую базу.
 
 ## Где что лежит
 

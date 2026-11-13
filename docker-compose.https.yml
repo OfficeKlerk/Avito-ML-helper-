@@ -1,0 +1,30 @@
+# Стенд с доменом, DNS и доступными портами 80/443.
+services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Задайте пароль PostgreSQL для HTTPS-стенда}
+  core-api:
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Задайте отдельный JWT_SECRET для HTTPS-стенда}
+  corp-mock:
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Задайте отдельный JWT_SECRET для HTTPS-стенда}
+      CORP_FAULT_TOKEN: ""
+  knowledge-service:
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?Задайте отдельный JWT_SECRET для HTTPS-стенда}
+  web-app:
+    ports: !reset []
+  https:
+    image: caddy:2.11-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
+    environment:
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Укажите домен стенда в PUBLIC_DOMAIN}
+    ports: ["80:80", "443:443"]
+    volumes:
+      - ./infra/https/Caddyfile:/etc/caddy/Caddyfile:ro
+      - tls-data:/data
+    depends_on:
+      web-app: { condition: service_healthy, restart: true }
+
+volumes:
+  tls-data:
