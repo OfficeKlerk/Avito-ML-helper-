@@ -1,0 +1,70 @@
+.chat-form {
+  justify-items: start;
+}
+
+.chat-form .field {
+  width: 100%;
+}
+
+.chat-form textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 5rem;
+  padding: .55rem .65rem;
+  border: 1px solid #8a8fa3;
+  border-radius: .55rem;
+  font: inherit;
+  color: inherit;
+}
+
+.chat-form textarea[aria-invalid="true"] {
+  border-color: #9d2445;
+}
+
+.chat-markdown, .chat-sources, .source-metadata, .document-section {
+  display: grid;
+  min-width: 0;
+  gap: .55rem;
+  overflow-wrap: anywhere;
+}
+
+.chat-markdown > :is(ul, ol, blockquote, pre), .chat-markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0;
+}
+
+.chat-markdown pre {
+  white-space: pre-wrap;
+  padding: .75rem;
+  border-radius: .45rem;
+  background: #edf0f5;
+}
+
+.chat-markdown blockquote {
+  border-inline-start: 3px solid #b3a2df;
+  padding-inline-start: .75rem;
+}
+
+.chat-markdown ul, .chat-markdown ol {
+  padding-inline-start: 1.5em;
+}
+
+.chat-sources {
+  padding-block-start: .75rem;
+  border-block-start: 1px solid var(--line);
+}
+
+.chat-sources li + li {
+  margin-block-start: .65rem;
+}
+
+.source-metadata {
+  gap: .3rem;
+  margin-block-start: .25rem;
+  color: var(--muted);
+  font-size: .85rem;
+}
+
+.document-section + .document-section {
+  border-block-start: 1px solid var(--line);
+  padding-block-start: .85rem;
+}
