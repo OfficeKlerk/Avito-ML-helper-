@@ -47,6 +47,19 @@ curl -fsS http://localhost:8080/api/actions -H "Authorization: Bearer $TOKEN"
 сообщение помощника со статусом `error` и сохраняет состояние диалога для следующего сообщения.
 Пока один ход обрабатывается, второй параллельный ход того же пользователя получает `429`.
 
+Повтор отправки безопасен с заголовком `Idempotency-Key` (8–128 символов). Повтор с тем же
+ключом и текстом возвращает сохранённый ответ: агент не вызывается, второе сообщение и
+черновик не появляются. Тот же ключ с другим текстом — `409`. Пока исходный ход идёт — `429`,
+повтори чуть позже. Если ответ потерялся, а ход прервался после сохранения сообщения, повтор
+продолжит тот же ход с тем же `request_id`, поэтому агент и corp-mock узнают уже созданные
+черновики. Без ключа всё работает как раньше.
+
+```bash
+curl -fsS http://localhost:8080/api/chat/messages \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: chat-demo-0001' -d '{"text":"Во сколько у нас стендап?"}'
+```
+
 Ответ агента и карточки предложенных черновиков сохраняются одной транзакцией.
 Предложенные агентом статусы применяются к задачам текущего пользователя. Выполненную
 задачу агент не переоткрывает. Закрытие задачи, требующей выдачи доступа,
@@ -97,6 +110,23 @@ curl -fsS -X POST "http://localhost:8080/api/actions/$ACTION_ID/cancel" \
 
 ```bash
 curl -fsS http://localhost:8080/api/notifications -H "Authorization: Bearer $TOKEN"
+curl -fsS -X PATCH http://localhost:8080/api/notifications/ntf_105 \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"read":true}'
+```
+
+`PATCH /api/notifications/{id}` с `{"read":true}` сохраняет прочтение в PostgreSQL. Повтор
+возвращает ту же запись. Чужое и несуществующее уведомление одинаково дают `404`.
+
+## Источники
+
+`GET /api/knowledge/documents/{doc_id}` открывает документ из ответа помощника. core-api
+передаёт JWT пользователя и `X-Request-Id` в knowledge-service, поэтому права те же, что и
+в поиске: документ другой команды или роли — `403` без его текста, нет документа — `404`,
+поиск недоступен — `503`. Ответ не кешируется (`Cache-Control: no-store`). Адрес
+knowledge-service — `KNOWLEDGE_URL`, в Compose по умолчанию `http://knowledge-service:8060`.
+
+```bash
+curl -fsS http://localhost:8080/api/knowledge/documents/kb_delivery_rituals -H "Authorization: Bearer $TOKEN"
 ```
 
 ## Диагностика

@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -24,6 +25,11 @@ func (a api) postMessage(w http.ResponseWriter, r *http.Request, u store.User) {
 		WriteError(w, http.StatusUnprocessableEntity, "validation", "Введи сообщение длиной от 1 до 4000 символов.")
 		return
 	}
+	key, ok := idempotencyKey(r)
+	if !ok {
+		WriteError(w, http.StatusUnprocessableEntity, "validation", "Idempotency-Key должен быть длиной от 8 до 128 символов.")
+		return
+	}
 	id := diagnostics.ID(r.Context())
 	a.syncPending(r, u.ID, "")
 
@@ -31,15 +37,30 @@ func (a api) postMessage(w http.ResponseWriter, r *http.Request, u store.User) {
 		User      store.Message `json:"user_message"`
 		Assistant store.Message `json:"assistant_message"`
 	}
+	var replay []byte
 	ctx := r.Context()
 	err := a.db.WithChat(ctx, u.ID, func(session *store.ChatSession) error {
-		stages, history, state, err := session.Context(ctx, 20)
+		if key != "" {
+			turn, found, err := session.Turn(ctx, key, input.Text)
+			if err != nil || turn.Response != nil {
+				replay = turn.Response
+				return err
+			}
+			if found {
+				// Прошлая попытка сохранила сообщение, но не ответ: продолжаем тот же ход с тем же request_id,
+				// чтобы агент и corp-mock узнали уже созданные черновики.
+				id, exchange.User = turn.RequestID, turn.UserMessage
+			}
+		}
+		stages, history, state, err := session.Context(ctx, 20, exchange.User.ID)
 		if err != nil {
 			return err
 		}
-		exchange.User, err = session.AddUserMessage(ctx, "msg_"+id[3:]+"_u", input.Text)
-		if err != nil {
-			return err
+		if exchange.User.ID == "" {
+			exchange.User, err = session.AddUserMessage(ctx, "msg_"+id[3:]+"_u", input.Text, key, id)
+			if err != nil {
+				return err
+			}
 		}
 
 		// После сохранения сообщения завершаем ход даже при разрыве HTTP-соединения.
@@ -54,15 +75,23 @@ func (a api) postMessage(w http.ResponseWriter, r *http.Request, u store.User) {
 		reply := a.agentReply(work, r.Header.Get("Authorization"), req)
 		reply.ID = "msg_" + id[3:] + "_a"
 		reply.Role = "assistant"
-		exchange.Assistant, err = session.Finish(work, exchange.User, reply)
+		exchange.Assistant, err = session.Finish(work, exchange.User, reply, key)
 		return err
 	})
+	if errors.Is(err, store.ErrKeyConflict) {
+		WriteError(w, http.StatusConflict, "conflict", "Этот Idempotency-Key уже использован для другого сообщения.")
+		return
+	}
 	if errors.Is(err, store.ErrChatBusy) {
 		WriteError(w, http.StatusTooManyRequests, "rate_limited", "Предыдущее сообщение ещё обрабатывается. Попробуй чуть позже.")
 		return
 	}
 	if err != nil {
 		internalError(w)
+		return
+	}
+	if replay != nil {
+		WriteJSON(w, http.StatusOK, json.RawMessage(replay))
 		return
 	}
 	WriteJSON(w, http.StatusOK, exchange)

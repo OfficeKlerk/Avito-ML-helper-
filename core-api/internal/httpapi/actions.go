@@ -23,13 +23,24 @@ type actionConflict string
 func (e actionConflict) Error() string { return string(e) }
 
 func (a api) confirmAction(w http.ResponseWriter, r *http.Request, u store.User) {
-	keys := r.Header.Values("Idempotency-Key")
-	if len(keys) != 1 || strings.TrimSpace(keys[0]) != keys[0] || !utf8.ValidString(keys[0]) ||
-		utf8.RuneCountInString(keys[0]) < 8 || utf8.RuneCountInString(keys[0]) > 128 {
+	key, ok := idempotencyKey(r)
+	if !ok || key == "" {
 		WriteError(w, http.StatusUnprocessableEntity, "validation", "Укажи Idempotency-Key длиной от 8 до 128 символов.")
 		return
 	}
-	a.changeAction(w, r, u, "submit", keys[0])
+	a.changeAction(w, r, u, "submit", key)
+}
+
+// idempotencyKey читает необязательный Idempotency-Key. ok=false — заголовок есть, но неверный:
+// повторён, с пробелами по краям или не 8–128 символов.
+func idempotencyKey(r *http.Request) (key string, ok bool) {
+	keys := r.Header.Values("Idempotency-Key")
+	if len(keys) == 0 {
+		return "", true
+	}
+	key = keys[0]
+	n := utf8.RuneCountInString(key)
+	return key, len(keys) == 1 && strings.TrimSpace(key) == key && utf8.ValidString(key) && n >= 8 && n <= 128
 }
 
 func (a api) cancelAction(w http.ResponseWriter, r *http.Request, u store.User) {

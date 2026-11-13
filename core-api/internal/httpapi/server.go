@@ -43,27 +43,30 @@ type Backend interface {
 	PendingActions(context.Context, string, string) ([]store.ActionRecord, error)
 	SyncAction(context.Context, store.ActionRecord, store.ActionChange) error
 	Notifications(context.Context, string) (json.RawMessage, error)
+	MarkNotificationRead(context.Context, string, int64) (json.RawMessage, error)
 	WithChat(context.Context, string, func(*store.ChatSession) error) error
 	ChangeAction(context.Context, string, string, string, func(store.ActionRecord) (store.ActionChange, error)) (json.RawMessage, error)
 }
 
 type Dependencies struct {
-	Agent  *clients.Agent
-	Corp   *clients.Corp
-	Logger *slog.Logger
+	Agent     *clients.Agent
+	Corp      *clients.Corp
+	Knowledge *clients.Knowledge
+	Logger    *slog.Logger
 }
 
 type api struct {
-	db     Backend
-	secret []byte
-	now    func() time.Time
-	agent  *clients.Agent
-	corp   *clients.Corp
+	db        Backend
+	secret    []byte
+	now       func() time.Time
+	agent     *clients.Agent
+	corp      *clients.Corp
+	knowledge *clients.Knowledge
 }
 
 // NewHandler собирает маршруты сервиса.
 func NewHandler(version string, db Backend, jwtSecret string, now func() time.Time, deps Dependencies) http.Handler {
-	a := api{db: db, secret: []byte(jwtSecret), now: now, agent: deps.Agent, corp: deps.Corp}
+	a := api{db: db, secret: []byte(jwtSecret), now: now, agent: deps.Agent, corp: deps.Corp, knowledge: deps.Knowledge}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", func(w http.ResponseWriter, _ *http.Request) {
 		WriteJSON(w, http.StatusOK, healthBody{Status: "ok", Service: ServiceName, Version: version})
@@ -79,6 +82,8 @@ func NewHandler(version string, db Backend, jwtSecret string, now func() time.Ti
 	mux.HandleFunc("POST /api/actions/{action_id}/confirm", a.requireUser(a.confirmAction))
 	mux.HandleFunc("POST /api/actions/{action_id}/cancel", a.requireUser(a.cancelAction))
 	mux.HandleFunc("GET /api/notifications", a.requireUser(a.listNotifications))
+	mux.HandleFunc("PATCH /api/notifications/{notification_id}", a.requireUser(a.markNotificationRead))
+	mux.HandleFunc("GET /api/knowledge/documents/{doc_id}", a.requireUser(a.getDocument))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		WriteError(w, http.StatusNotFound, "not_found", "Не найдено.")
 	})
