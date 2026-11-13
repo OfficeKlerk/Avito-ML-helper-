@@ -68,6 +68,7 @@ paths:
     patch:
       operationId: onboarding_task_patch
       summary: Изменить статус своей задачи
+      description: Для связанной задачи на доступ статус done требует подтверждения выдачи.
       parameters:
         - name: task_id
           in: path
@@ -156,7 +157,7 @@ paths:
       operationId: action_confirm
       summary: Подтвердить черновик — core-api отправляет заявку в corp-mock (контракт D)
       description: >
-        Повтор с тем же `Idempotency-Key` возвращает тот же результат и не создаёт вторую заявку.
+        Повтор с тем же `Idempotency-Key` для этой карточки возвращает сохранённый ответ и не создаёт вторую заявку.
         Если corp-mock недоступен, возвращается 503, карточка остаётся черновиком и запрос можно повторить.
         Если ответ corp-mock потерялся, core-api перед повтором выясняет статус заявки.
       parameters:
@@ -174,6 +175,7 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
         "503": { $ref: "#/components/responses/Error" }
 
   /api/actions/{action_id}/cancel:
@@ -191,11 +193,12 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
         "409": { $ref: "#/components/responses/Error" }
+        "503": { $ref: "#/components/responses/Error" }
 
   /api/notifications:
     get:
       operationId: notifications_list
-      summary: Напоминания и смены статусов (волна 3)
+      summary: Напоминания и смены статусов текущего пользователя
       responses:
         "200":
           description: Уведомления, новые сверху
