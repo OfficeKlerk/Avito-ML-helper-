@@ -1,0 +1,99 @@
+# D4: проверки на каждый PR и push в main. Всё через make и Docker — как локально.
+# Платная LLM здесь не нужна: агент работает без модели. Прогон с моделью — только вручную (llm-eval).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      llm:
+        description: "Прогнать make eval с настоящей моделью (нужны секреты LLM_*)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Контракты и lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir -p reports
+      - name: Контракты, примеры и тестовые данные
+        run: make contracts 2>&1 | tee reports/contracts.log
+      - name: Lint Python
+        run: make lint 2>&1 | tee reports/lint.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checks-reports
+          path: reports/
+
+  tests:
+    name: Тесты и покрытие
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir -p reports
+      # Go: gofmt, vet и тесты; Python: pytest с порогом 80%; TypeScript: typecheck и тесты.
+      # Тесты с PostgreSQL (test-core-api-db, test-corp-mock-db) падают, если хоть один тест пропущен.
+      - name: make test
+        run: make test 2>&1 | tee reports/test.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: reports/
+
+  integration:
+    name: Общая сборка (I1)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: make integration
+        run: make integration 2>&1 | tee reports-integration.log
+      - if: always()
+        run: mkdir -p reports && mv reports-integration.log reports/integration.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-reports
+          path: reports/
+
+  llm-eval:
+    name: Качество агента с моделью
+    if: github.event_name == 'workflow_dispatch' && inputs.llm
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Настройки модели из секретов
+        env:
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+        run: |
+          if [ -z "$LLM_API_KEY" ] || [ -z "$LLM_MODEL" ] || [ -z "$LLM_BASE_URL" ]; then
+            echo "Нужны секреты репозитория LLM_API_KEY, LLM_MODEL и LLM_BASE_URL" >&2
+            exit 1
+          fi
+          umask 077
+          printf 'LLM_PROVIDER=openai\nLLM_BASE_URL=%s\nLLM_MODEL=%s\nLLM_API_KEY=%s\n' "$LLM_BASE_URL" "$LLM_MODEL" "$LLM_API_KEY" > .env
+      - name: make eval
+        run: make eval
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: llm-eval-report
+          path: agent/evals/reports/
