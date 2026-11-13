@@ -1,7 +1,9 @@
 import type { RouteObject } from "react-router";
 import { LoginPage } from "./LoginPage";
 import { ProfilePage } from "./ProfilePage";
-import { ActionPage, ActionsPage, ChatPage, NotificationsPage, OnboardingPage } from "./SectionPages";
+import { NotificationsPage } from "../features/notifications/NotificationsPage";
+import { OnboardingPage } from "../features/onboarding/OnboardingPage";
+import { ActionPage, ActionsPage, ChatPage } from "./SectionPages";
 import { PageNotFound, RouteError, Shell } from "./Shell";
 import { RequireAuth } from "./session";
 

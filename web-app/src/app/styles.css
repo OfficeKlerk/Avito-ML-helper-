@@ -124,6 +124,8 @@ svg { flex: none; }
 .row-list li { padding-block: .65rem; border-block-start: 1px solid var(--line); }
 .message--user { background: #f1edfc; }
 .message-text { white-space: pre-wrap; }
+.next-steps { display: grid; gap: .75rem; margin: 0; padding-inline-start: 1.25rem; }
+.notification--unread { border-color: #b3a2df; }
 progress { width: 100%; accent-color: var(--accent); }
 .standalone { width: min(100% - 2rem, 29rem); margin: clamp(2rem, 10vh, 6rem) auto; }
 .standalone .brand { margin-inline: 0; }
