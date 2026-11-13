@@ -38,7 +38,7 @@ export function ConfirmDialog({
   }, [open, busy, error]);
 
   return (
-    <dialog ref={dialog} className="dialog" aria-labelledby={titleId} aria-describedby={descriptionId}
+    <dialog ref={dialog} className="dialog" hidden={!open} aria-labelledby={titleId} aria-describedby={descriptionId}
       onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }}>
       <h2 id={titleId}>{title}</h2>
       <div id={descriptionId}>{children}</div>

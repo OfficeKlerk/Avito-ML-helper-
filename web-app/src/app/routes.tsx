@@ -4,7 +4,8 @@ import { ProfilePage } from "./ProfilePage";
 import { NotificationsPage } from "../features/notifications/NotificationsPage";
 import { OnboardingPage } from "../features/onboarding/OnboardingPage";
 import { ActionPage, ActionsPage } from "../features/actions/ActionsPage";
-import { ChatPage } from "./SectionPages";
+import { ChatPage } from "../features/chat/ChatPage";
+import { DocumentPage } from "../features/chat/DocumentPage";
 import { PageNotFound, RouteError, Shell } from "./Shell";
 import { RequireAuth } from "./session";
 
@@ -20,6 +21,7 @@ export const routes: RouteObject[] = [
         children: [
           { index: true, element: <ProfilePage /> },
           { path: "chat", element: <ChatPage /> },
+          { path: "chat/sources/:docId/:anchor?", element: <DocumentPage /> },
           { path: "onboarding", element: <OnboardingPage /> },
           { path: "onboarding/tasks/:taskId", element: <OnboardingPage /> },
           { path: "actions", element: <ActionsPage /> },

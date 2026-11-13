@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
+import { clearPendingTurn } from "../features/chat/pendingTurn";
 import { Button, ErrorMessage, Loading } from "../shared/ui/controls";
 import { ApiError, call, createApi, type Api, type Schemas } from "../shared/api/client";
 
@@ -82,7 +83,11 @@ export function SessionProvider({ children, fetch }: { children: ReactNode; fetc
   }, [api]);
 
   const value = useMemo(
-    () => ({ api, token, user, error, login, logout, retry: () => setAttempt((n) => n + 1) }),
+    () => ({
+      api, token, user, error, login,
+      logout: () => { clearPendingTurn(); logout(); },
+      retry: () => setAttempt((n) => n + 1),
+    }),
     [api, token, user, error, login, logout],
   );
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
