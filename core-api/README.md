@@ -129,6 +129,35 @@ knowledge-service — `KNOWLEDGE_URL`, в Compose по умолчанию `http:
 curl -fsS http://localhost:8080/api/knowledge/documents/kb_delivery_rituals -H "Authorization: Bearer $TOKEN"
 ```
 
+## События для метрик пользы
+
+События лежат в `core.product_events`: идентификаторы сессии и прохождения сценария (UUID,
+их создаёт клиент), тип события и время сервера. Текста диалога, JWT и паролей там нет.
+
+Клиент присылает `POST /api/metrics/events` только три события: `scenario_started`,
+`source_opened`, `human_help_requested`. Повтор того же `event_id` с теми же полями
+возвращает прежнее время, с другими полями — `409`. Лишние поля и неизвестные типы — `422`.
+
+```bash
+curl -fsS http://localhost:8080/api/metrics/events -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' -d '{"event_id":"11111111-1111-4111-8111-111111111111",
+  "session_id":"22222222-2222-4222-8222-222222222222","scenario_id":"33333333-3333-4333-8333-333333333333",
+  "scenario":"absence","event":"scenario_started"}'
+```
+
+Остальное записывает сервер по сохранённым данным, если ход чата пришёл с заголовками
+`X-Product-Session-Id` и `X-Product-Scenario-Id` (оба, в формате UUID, иначе `422`):
+
+| Событие | Когда | `status` |
+|---|---|---|
+| `assistant_answered` | ответ помощника сохранён | `ok`, `degraded` или `error` |
+| `action_confirmed` | карточка из этого хода отправлена | `submitted` |
+| `action_succeeded` | отгул согласован или доступ выдан (`fulfilled_at`) | `approved` |
+| `action_failed` | заявка отклонена или отменена | `rejected`, `cancelled` |
+
+Событие пишется в той же транзакции, что и ответ или смена статуса, поэтому повтор запроса
+его не дублирует.
+
 ## Диагностика
 
 В каждом ответе core-api есть `X-Request-Id`. Этот же идентификатор передаётся

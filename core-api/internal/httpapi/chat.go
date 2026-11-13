@@ -30,6 +30,11 @@ func (a api) postMessage(w http.ResponseWriter, r *http.Request, u store.User) {
 		WriteError(w, http.StatusUnprocessableEntity, "validation", "Idempotency-Key должен быть длиной от 8 до 128 символов.")
 		return
 	}
+	product, ok := productHeaders(r)
+	if !ok {
+		WriteError(w, http.StatusUnprocessableEntity, "validation", "Передай X-Product-Session-Id и X-Product-Scenario-Id вместе, в формате UUID.")
+		return
+	}
 	id := diagnostics.ID(r.Context())
 	a.syncPending(r, u.ID, "")
 
@@ -75,6 +80,7 @@ func (a api) postMessage(w http.ResponseWriter, r *http.Request, u store.User) {
 		reply := a.agentReply(work, r.Header.Get("Authorization"), req)
 		reply.ID = "msg_" + id[3:] + "_a"
 		reply.Role = "assistant"
+		reply.Product = product
 		exchange.Assistant, err = session.Finish(work, exchange.User, reply, key)
 		return err
 	})

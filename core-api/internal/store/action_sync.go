@@ -96,6 +96,11 @@ func applyActionChange(ctx context.Context, tx *sql.Tx, record ActionRecord, upd
 		if err != nil {
 			return nil, err
 		}
+		if event := actionOutcome(record, update.Status, statusChanged, granted); event != "" {
+			if err := recordActionEvent(ctx, tx, record, event, update.Status); err != nil {
+				return nil, err
+			}
+		}
 	}
 	if taskID != nil {
 		taskEvents, err := syncAccessTask(ctx, tx, record.OwnerID, *taskID)

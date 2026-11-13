@@ -58,6 +58,8 @@ type Reply struct {
 	State       json.RawMessage
 	Drafts      []Draft
 	TaskUpdates []TaskUpdate
+	// Product — сценарий метрик, к которому клиент привязал ход.
+	Product Product
 }
 
 type ChatSession struct {
@@ -207,7 +209,7 @@ func (s *ChatSession) Finish(ctx context.Context, userMessage Message, reply Rep
 			continue
 		}
 		seen[draft.ExternalID] = true
-		card, createdID, err := saveDraft(ctx, tx, s.ownerID, msg.ID, len(msg.Actions), draft, msg.CreatedAt)
+		card, createdID, err := saveDraft(ctx, tx, s.ownerID, msg.ID, len(msg.Actions), draft, msg.CreatedAt, reply.Product)
 		if err != nil {
 			return Message{}, err
 		}
@@ -252,6 +254,9 @@ func (s *ChatSession) Finish(ctx context.Context, userMessage Message, reply Rep
 		}
 		events = append(events, statusEvent{"task", update.TaskID, oldStatus, update.Status})
 	}
+	if err := recordAnswerEvent(ctx, tx, s.ownerID, reply.Product, msg); err != nil {
+		return Message{}, err
+	}
 	if key != "" {
 		exchange, err := json.Marshal(map[string]Message{"user_message": userMessage, "assistant_message": msg})
 		if err != nil {
@@ -271,7 +276,7 @@ func (s *ChatSession) Finish(ctx context.Context, userMessage Message, reply Rep
 	return msg, nil
 }
 
-func saveDraft(ctx context.Context, tx *sql.Tx, ownerID, messageID string, position int, draft Draft, created time.Time) (json.RawMessage, string, error) {
+func saveDraft(ctx context.Context, tx *sql.Tx, ownerID, messageID string, position int, draft Draft, created time.Time, product Product) (json.RawMessage, string, error) {
 	hash := sha256.Sum256([]byte(ownerID + ":" + draft.ExternalID))
 	id := fmt.Sprintf("act_%x", hash[:16])
 	fields, err := json.Marshal(draft.Fields)
@@ -279,10 +284,11 @@ func saveDraft(ctx context.Context, tx *sql.Tx, ownerID, messageID string, posit
 		return nil, "", err
 	}
 	result, err := tx.ExecContext(ctx, `
-		INSERT INTO core.actions (id, owner_id, type, status, title, fields, external_id, created_at, updated_at)
-		VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $7)
+		INSERT INTO core.actions (id, owner_id, type, status, title, fields, external_id, created_at, updated_at,
+		                          product_session_id, product_scenario_id)
+		VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $7, NULLIF($8, '')::uuid, NULLIF($9, '')::uuid)
 		ON CONFLICT (owner_id, external_id) DO NOTHING
-	`, id, ownerID, draft.Type, draft.Title, string(fields), draft.ExternalID, created)
+	`, id, ownerID, draft.Type, draft.Title, string(fields), draft.ExternalID, created, product.SessionID, product.ScenarioID)
 	if err != nil {
 		return nil, "", err
 	}

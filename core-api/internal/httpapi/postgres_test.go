@@ -170,7 +170,7 @@ func TestPostgresOnboardingAndOwnership(t *testing.T) {
 	err = db.QueryRowContext(ctx, `SELECT (SELECT count(*) FROM core.users), (SELECT count(*) FROM core.tasks),
 		(SELECT count(*) FROM core.messages), (SELECT count(*) FROM core.actions), (SELECT count(*) FROM core.schema_migrations)`).
 		Scan(&users, &tasks, &storedMessages, &actions, &migrations)
-	if err != nil || users != 7 || tasks != 30 || storedMessages != 4 || actions != 2 || migrations != 4 {
+	if err != nil || users != 7 || tasks != 30 || storedMessages != 4 || actions != 2 || migrations != 5 {
 		t.Fatalf("количество строк после повторных загрузок: %d/%d/%d/%d/%d (%v)", users, tasks, storedMessages, actions, migrations, err)
 	}
 }
