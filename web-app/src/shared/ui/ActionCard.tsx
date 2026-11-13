@@ -24,7 +24,8 @@ export function ActionCard({ action, footer }: { action: Schemas["ActionCard"]; 
         {action.external_id && <div><dt>Идентификатор заявки</dt><dd>{action.external_id}</dd></div>}
         {action.result?.external_ref && <div><dt>Номер заявки</dt><dd>{action.result.external_ref}</dd></div>}
       </dl>
-      {action.result?.message && <p>{action.result.message}</p>}
+      {/* После отмены сохранённый текст отправки («ушла на согласование») уже неправда. */}
+      {action.status === "cancelled" ? <p>Заявка отменена.</p> : action.result?.message && <p>{action.result.message}</p>}
       {action.error && <p className="field-error">{action.error}</p>}
       {footer && <div className="card-footer">{footer}</div>}
     </article>
