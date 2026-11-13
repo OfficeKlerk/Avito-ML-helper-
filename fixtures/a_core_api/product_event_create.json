@@ -1,0 +1,107 @@
+{
+  "contract": "A",
+  "operation": "product_event_create",
+  "method": "POST",
+  "path": "/api/metrics/events",
+  "request_schema": "a_core_api.yaml#/components/schemas/ProductEventInput",
+  "cases": [
+    {
+      "name": "recorded",
+      "kind": "success",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "event_id": "11111111-1111-4111-8111-111111111111",
+          "session_id": "22222222-2222-4222-8222-222222222222",
+          "scenario_id": "33333333-3333-4333-8333-333333333333",
+          "scenario": "knowledge",
+          "event": "scenario_started"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "event_id": "11111111-1111-4111-8111-111111111111",
+          "recorded_at": "2026-11-11T10:10:00+03:00"
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ProductEventReceipt"
+    },
+    {
+      "name": "duplicate",
+      "kind": "success",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "event_id": "11111111-1111-4111-8111-111111111111",
+          "session_id": "22222222-2222-4222-8222-222222222222",
+          "scenario_id": "33333333-3333-4333-8333-333333333333",
+          "scenario": "knowledge",
+          "event": "scenario_started"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "event_id": "11111111-1111-4111-8111-111111111111",
+          "recorded_at": "2026-11-11T10:10:00+03:00"
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ProductEventReceipt"
+    },
+    {
+      "name": "event_id_conflict",
+      "kind": "conflict",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "event_id": "11111111-1111-4111-8111-111111111111",
+          "session_id": "22222222-2222-4222-8222-222222222222",
+          "scenario_id": "33333333-3333-4333-8333-333333333333",
+          "scenario": "knowledge",
+          "event": "source_opened"
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "conflict",
+            "message": "Идентификатор уже использован для другого события."
+          }
+        }
+      }
+    },
+    {
+      "name": "client_cannot_report_outcome",
+      "kind": "validation",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "event_id": "11111111-1111-4111-8111-111111111111",
+          "session_id": "22222222-2222-4222-8222-222222222222",
+          "scenario_id": "33333333-3333-4333-8333-333333333333",
+          "scenario": "knowledge",
+          "event": "action_succeeded"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Недопустимый тип события."
+          }
+        }
+      }
+    }
+  ]
+}

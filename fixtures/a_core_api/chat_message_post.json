@@ -347,6 +347,112 @@
           }
         }
       }
+    },
+    {
+      "name": "idempotent_first_send",
+      "kind": "success",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "Idempotency-Key": "chat-example-0001"
+        },
+        "body": {
+          "text": "Что мне делать дальше?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Что мне делать дальше?",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "Сейчас у тебя первая неделя. Вот что стоит сделать в первую очередь:\n\n1. **Попроси добавить тебя в ключевые каналы и чаты** — задача уже в работе, срок сегодня.\n2. **Запроси доступы к рабочим инструментам** — срок завтра, без них не настроить окружение.\n3. **Запроси доступ в пространство команды** — срок 13 ноября.",
+            "sources": [],
+            "actions": [],
+            "suggestions": [
+              "Каких доступов мне не хватает?",
+              "Как оформить отгул?"
+            ],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "idempotent_replay",
+      "kind": "success",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "Idempotency-Key": "chat-example-0001"
+        },
+        "body": {
+          "text": "Что мне делать дальше?"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user_message": {
+            "id": "msg_anna_101",
+            "role": "user",
+            "text": "Что мне делать дальше?",
+            "sources": [],
+            "actions": [],
+            "suggestions": [],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:00+03:00"
+          },
+          "assistant_message": {
+            "id": "msg_anna_102",
+            "role": "assistant",
+            "text": "Сейчас у тебя первая неделя. Вот что стоит сделать в первую очередь:\n\n1. **Попроси добавить тебя в ключевые каналы и чаты** — задача уже в работе, срок сегодня.\n2. **Запроси доступы к рабочим инструментам** — срок завтра, без них не настроить окружение.\n3. **Запроси доступ в пространство команды** — срок 13 ноября.",
+            "sources": [],
+            "actions": [],
+            "suggestions": [
+              "Каких доступов мне не хватает?",
+              "Как оформить отгул?"
+            ],
+            "status": "ok",
+            "created_at": "2026-11-11T10:10:03+03:00"
+          }
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/ChatExchange"
+    },
+    {
+      "name": "idempotency_conflict",
+      "kind": "conflict",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>",
+          "Idempotency-Key": "chat-example-0001"
+        },
+        "body": {
+          "text": "Другой вопрос"
+        }
+      },
+      "response": {
+        "status": 409,
+        "body": {
+          "error": {
+            "code": "conflict",
+            "message": "Ключ уже использован для другого текста."
+          }
+        }
+      }
     }
   ]
 }

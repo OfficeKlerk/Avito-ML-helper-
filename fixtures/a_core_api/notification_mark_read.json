@@ -1,0 +1,113 @@
+{
+  "contract": "A",
+  "operation": "notification_mark_read",
+  "method": "PATCH",
+  "path": "/api/notifications/{notification_id}",
+  "request_schema": "a_core_api.yaml#/components/schemas/NotificationReadPatch",
+  "cases": [
+    {
+      "name": "marked_read",
+      "kind": "success",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "read": true
+        },
+        "path_params": {
+          "notification_id": "ntf_anna_002"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "ntf_anna_002",
+          "kind": "action_status",
+          "text": "Заявка «Отгул 13.11.2026» отправлена на согласование.",
+          "task_id": null,
+          "action_id": "act_anna_dayoff_1",
+          "created_at": "2026-11-11T10:03:10+03:00",
+          "read": true
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/Notification"
+    },
+    {
+      "name": "repeat_read",
+      "kind": "success",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "read": true
+        },
+        "path_params": {
+          "notification_id": "ntf_anna_002"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "ntf_anna_002",
+          "kind": "action_status",
+          "text": "Заявка «Отгул 13.11.2026» отправлена на согласование.",
+          "task_id": null,
+          "action_id": "act_anna_dayoff_1",
+          "created_at": "2026-11-11T10:03:10+03:00",
+          "read": true
+        }
+      },
+      "response_schema": "a_core_api.yaml#/components/schemas/Notification"
+    },
+    {
+      "name": "foreign_notification",
+      "kind": "not_found",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_max>"
+        },
+        "body": {
+          "read": true
+        },
+        "path_params": {
+          "notification_id": "ntf_anna_002"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "error": {
+            "code": "not_found",
+            "message": "Уведомление не найдено."
+          }
+        }
+      }
+    },
+    {
+      "name": "invalid_read_value",
+      "kind": "validation",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <jwt:u_anna>"
+        },
+        "body": {
+          "read": false
+        },
+        "path_params": {
+          "notification_id": "ntf_anna_002"
+        }
+      },
+      "response": {
+        "status": 422,
+        "body": {
+          "error": {
+            "code": "validation",
+            "message": "Укажи read=true."
+          }
+        }
+      }
+    }
+  ]
+}
