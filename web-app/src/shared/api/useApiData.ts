@@ -1,37 +1,77 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type SetStateAction } from "react";
 import { ApiError, type Api } from "./client";
 
 export type Load<T> = (api: Api, signal: AbortSignal) => Promise<T>;
-type State<T> = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; data: T };
+type State<T> = { status: "loading" } | { status: "error"; message: string } |
+  { status: "ready"; data: T; refreshError?: string };
 
-/** Данные с сервера. reload() перечитывает их, не убирая с экрана текущие; replace() ставит ответ мутации. */
-export function useApiData<T>(api: Api, load: Load<T>) {
+/** При refreshInterval повторяем чтение только на видимой вкладке. */
+export function useApiData<T>(api: Api, load: Load<T>, refreshInterval?: number) {
   const [state, setState] = useState<State<T>>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
-  // Ответ мутации новее чтения, начатого до неё: такое чтение не должно вернуть старые данные.
-  const replaced = useRef(0);
+  const revision = useRef(0);
   useEffect(() => {
-    const controller = new AbortController();
-    const started = replaced.current;
-    const current = () => !controller.signal.aborted && started === replaced.current;
-    load(api, controller.signal).then(
-      (data) => { if (current()) setState({ status: "ready", data }); },
-      (error: unknown) => {
-        if (current()) {
-          setState({ status: "error", message: error instanceof ApiError ? error.message : "Не удалось загрузить данные." });
-        }
-      },
-    );
-    return () => controller.abort();
-  }, [api, load, attempt]);
+    let request: AbortController | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    function read() {
+      if (request || (refreshInterval && document.hidden)) return;
+      clearTimeout(timer);
+      const controller = new AbortController();
+      request = controller;
+      const startedAt = revision.current;
+      void load(api, controller.signal).then(
+        (data) => {
+          if (!controller.signal.aborted && startedAt === revision.current) setState({ status: "ready", data });
+        },
+        (error: unknown) => {
+          if (controller.signal.aborted || startedAt !== revision.current) return;
+          const message = error instanceof ApiError ? error.message : "Не удалось загрузить данные.";
+          setState((current) => refreshInterval && current.status === "ready"
+            ? { ...current, refreshError: message }
+            : { status: "error", message });
+        },
+      ).finally(() => {
+        if (controller.signal.aborted) return;
+        request = undefined;
+        if (refreshInterval && !document.hidden) timer = setTimeout(read, refreshInterval);
+      });
+    }
+
+    function pause() {
+      clearTimeout(timer);
+      request?.abort();
+      request = undefined;
+    }
+
+    function visibilityChanged() {
+      if (document.hidden) pause();
+      else read();
+    }
+
+    read();
+    if (refreshInterval) {
+      document.addEventListener("visibilitychange", visibilityChanged);
+      window.addEventListener("focus", read);
+    }
+    return () => {
+      pause();
+      document.removeEventListener("visibilitychange", visibilityChanged);
+      window.removeEventListener("focus", read);
+    };
+  }, [api, load, attempt, refreshInterval]);
+
   const reload = useCallback(() => {
-    // После ошибки показываем загрузку, чтобы «Повторить» было видно; свежие данные с экрана не убираем.
     setState((current) => current.status === "error" ? { status: "loading" } : current);
     setAttempt((n) => n + 1);
   }, []);
-  const replace = useCallback((data: T) => {
-    replaced.current += 1;
-    setState({ status: "ready", data });
+  const replace = useCallback((data: SetStateAction<T>) => {
+    revision.current += 1;
+    setState((current) => {
+      if (typeof data !== "function") return { status: "ready", data };
+      if (current.status !== "ready") return current;
+      return { ...current, data: (data as (previous: T) => T)(current.data) };
+    });
   }, []);
   return { state, reload, replace };
 }

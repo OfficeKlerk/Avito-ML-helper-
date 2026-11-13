@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useSession } from "../../app/session";
 import { ApiError, call, newIdempotencyKey, type Api, type Schemas } from "../../shared/api/client";
 import { useApiData, type Load } from "../../shared/api/useApiData";
 import { ActionItem } from "../actions/ActionItem";
+import { adaptationRefreshInterval, readTaskContext, taskContext, taskPath } from "../onboarding/taskLinks";
 import { Button, ErrorMessage, Loading, Status } from "../../shared/ui/controls";
 import { formatDocumentDate, getDocument, sourceUrl } from "./documents";
 import { Markdown } from "./Markdown";
@@ -20,12 +21,18 @@ type History = { messages: Message[] } | { error: string } | null;
 
 export function ChatPage() {
   const { api, user } = useSession();
-  return user && <Chat api={api} userId={user.id} />;
+  const location = useLocation();
+  const taskId = readTaskContext(location.search);
+  const question: unknown = location.state?.question;
+  return user && <Chat key={taskId} api={api} userId={user.id} taskId={taskId}
+    initialDraft={taskId && typeof question === "string" ? question : ""} />;
 }
 
-function Chat({ api, userId }: { api: Api; userId: string }) {
+function Chat({ api, userId, taskId, initialDraft }: {
+  api: Api; userId: string; taskId: string | null; initialDraft: string;
+}) {
   const [pending, setPending] = useState(() => readPendingTurn(userId));
-  const [draft, setDraft] = useState(pending?.text ?? "");
+  const [draft, setDraft] = useState(pending?.text ?? initialDraft);
   const [sendError, setSendError] = useState(pending ? "Результат отправки ещё не подтверждён. Можно повторить тот же запрос." : "");
   const [sending, setSending] = useState(false);
   const activeSend = useRef<AbortController | null>(null);
@@ -36,9 +43,9 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
   const hasCards = !!(history && "messages" in history && history.messages.some(({ actions }) => actions.length > 0));
   const [actionUpdates, setActionUpdates] = useState<Record<string, Schemas["ActionCard"]>>({});
   const loadActions = useCallback<Load<Schemas["ActionCardList"]>>((api, signal) => hasCards
-    ? call(api.GET("/api/actions", { signal }))
+    ? call(api.GET("/api/actions", { signal, cache: "no-store" }))
     : Promise.resolve({ actions: [] }), [hasCards]);
-  const actions = useApiData(api, loadActions);
+  const actions = useApiData(api, loadActions, taskId && hasCards ? adaptationRefreshInterval : undefined);
   const actionById = new Map(actions.state.status === "ready" ? actions.state.data.actions.map((action) => [action.id, action]) : []);
   const blocked = !!activeSend.current || !history || "error" in history;
 
@@ -119,6 +126,9 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
   return (
     <section className="page-stack">
       <h1>Чат</h1>
+      {taskId && <Link to={taskPath(taskId)}>Вернуться к задаче</Link>}
+      {actions.state.status === "ready" && actions.state.refreshError &&
+        <ErrorMessage onRetry={actions.reload}>Не удалось обновить заявки. {actions.state.refreshError}</ErrorMessage>}
       <div className="chat-announcement" role="status" aria-atomic="true">
         {sending ? "Ждём ответа помощника…" : ""}
       </div>
@@ -133,11 +143,11 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
             <ErrorMessage onRetry={actions.reload}>{actions.state.message}</ErrorMessage>
           </li>}
           {history.messages.map((message) => <ChatMessage key={message.id} message={message} sources={sources}
-            actionCards={message.actions.map(({ id, title }) => {
+            taskId={taskId} actionCards={message.actions.map(({ id, title }) => {
               const saved = actionById.get(id);
               const updated = actionUpdates[id];
               const action = updated && (!saved || Date.parse(updated.updated_at) > Date.parse(saved.updated_at)) ? updated : saved;
-              const link = <Link to={`/actions/${encodeURIComponent(id)}`}>Открыть заявку «{title}»</Link>;
+              const link = <Link to={`/actions/${encodeURIComponent(id)}${taskId ? taskContext(taskId) : ""}`}>Открыть заявку «{title}»</Link>;
               return <div key={id}>{action ? <ActionItem action={action} onChange={updateAction} footer={link} /> : link}</div>;
             })}
             onSuggestion={blocked || pending ? undefined : (text) => void send(text)} />)}
@@ -166,9 +176,10 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
   );
 }
 
-function ChatMessage({ message, sources, actionCards, onSuggestion }: {
+function ChatMessage({ message, sources, taskId, actionCards, onSuggestion }: {
   message: Message;
   sources: ReadonlyMap<string, Metadata | null>;
+  taskId: string | null;
   actionCards: ReactNode[];
   onSuggestion?: (text: string) => void;
 }) {
@@ -181,7 +192,7 @@ function ChatMessage({ message, sources, actionCards, onSuggestion }: {
         {message.status === "error" && <Status tone="danger">Не удалось ответить</Status>}
       </div>
       {assistant ? <Markdown text={message.text} /> : <p className="message-text">{message.text}</p>}
-      {assistant && message.sources.length > 0 && <SourceList sources={message.sources} metadata={sources} />}
+      {assistant && message.sources.length > 0 && <SourceList sources={message.sources} metadata={sources} taskId={taskId} />}
       {assistant && actionCards.length > 0 && <div className="card-list">{actionCards}</div>}
       {assistant && message.suggestions.length > 0 && <div className="button-row" role="group" aria-label="Следующие вопросы">
         {[...new Set(message.suggestions)].map((text) => <Button key={text} tone="secondary"
@@ -192,7 +203,9 @@ function ChatMessage({ message, sources, actionCards, onSuggestion }: {
   );
 }
 
-function SourceList({ sources, metadata }: { sources: Source[]; metadata: ReadonlyMap<string, Metadata | null> }) {
+function SourceList({ sources, metadata, taskId }: {
+  sources: Source[]; metadata: ReadonlyMap<string, Metadata | null>; taskId: string | null;
+}) {
   return (
     <div className="chat-sources">
       <strong>Источники</strong>
@@ -201,7 +214,7 @@ function SourceList({ sources, metadata }: { sources: Source[]; metadata: Readon
           const details = metadata.get(source.doc_id);
           return (
             <li key={source.chunk_id}>
-              <Link to={sourceUrl(source)}>{source.title}{source.section && <span> · {source.section}</span>}</Link>
+              <Link to={sourceUrl(source) + (taskId ? taskContext(taskId) : "")}>{source.title}{source.section && <span> · {source.section}</span>}</Link>
               {details ? <div className="source-metadata">
                 <span>Обновлено <time dateTime={details.updated_at}>{formatDocumentDate(details.updated_at)}</time></span>
                 {details.disclaimer && <Status tone="warning">{details.disclaimer}</Status>}

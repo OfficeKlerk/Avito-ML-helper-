@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import { useSession } from "../../app/session";
 import { ApiError, type Schemas } from "../../shared/api/client";
 import { ErrorMessage, Loading, Status } from "../../shared/ui/controls";
 import { formatDocumentDate, getDocument, splitDocument } from "./documents";
 import { Markdown } from "./Markdown";
+import { readTaskContext, taskContext } from "../onboarding/taskLinks";
 
 type DocumentState = { document: Schemas["Document"] } | { error: string; retryable: boolean } | null;
 
@@ -35,7 +36,9 @@ function DocumentReader({ docId, anchor }: { docId: string; anchor?: string }) {
     return () => controller.abort();
   }, [api, docId, attempt]);
 
-  const back = <Link to="/chat">Вернуться в чат</Link>;
+  const taskId = readTaskContext(useLocation().search);
+  const context = taskId ? taskContext(taskId) : "";
+  const back = <Link to={`/chat${context}`}>Вернуться в чат</Link>;
   if (!state || "error" in state) {
     return (
       <section className="page-stack">
@@ -56,7 +59,7 @@ function DocumentReader({ docId, anchor }: { docId: string; anchor?: string }) {
     <section className="page-stack">
       <div className="button-row">
         {back}
-        {selected && <Link to={`/chat/sources/${encodeURIComponent(docId)}`}>Весь документ</Link>}
+        {selected && <Link to={`/chat/sources/${encodeURIComponent(docId)}${context}`}>Весь документ</Link>}
       </div>
       <article className="panel content-panel">
         <h1>{document.title}</h1>

@@ -1,10 +1,11 @@
 import { useCallback } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import { useSession } from "../../app/session";
 import { call, type Schemas } from "../../shared/api/client";
 import { useApiData, type Load } from "../../shared/api/useApiData";
 import { ErrorMessage, Loading } from "../../shared/ui/controls";
 import { ActionItem } from "./ActionItem";
+import { readTaskContext, taskPath } from "../onboarding/taskLinks";
 import { isOpen, usePolling } from "./polling";
 
 const loadActions: Load<Schemas["ActionCardList"]> = (api, signal) => call(api.GET("/api/actions", { signal }));
@@ -19,7 +20,9 @@ export function ActionsPage() {
   else if (!state.data.actions.length) content = <div className="panel empty-state"><p>Заявок пока нет. Их создаёт помощник в чате.</p></div>;
   else {
     const actions = state.data.actions;
-    const update = (card: Schemas["ActionCard"]) => replace({ actions: actions.map((item) => item.id === card.id ? card : item) });
+    const update = (card: Schemas["ActionCard"]) => replace((current) => ({
+      actions: current.actions.map((item) => item.id === card.id ? card : item),
+    }));
     content = <ul className="plain-list card-list">{actions.map((action) => <li key={action.id}>
       <ActionItem action={action} onChange={update} footer={<Link to={`/actions/${encodeURIComponent(action.id)}`}
         aria-label={`Открыть заявку «${action.title}»`}>Открыть заявку</Link>} />
@@ -30,8 +33,12 @@ export function ActionsPage() {
 
 export function ActionPage() {
   const { actionId = "" } = useParams();
+  const taskId = readTaskContext(useLocation().search);
   return <section className="page-stack"><h1>Заявка</h1>
-    <Link to="/actions">Все заявки</Link>
+    <div className="button-row">
+      <Link to="/actions">Все заявки</Link>
+      {taskId && <Link to={taskPath(taskId)}>Вернуться к задаче</Link>}
+    </div>
     <ActionDetail key={actionId} id={actionId} />
   </section>;
 }
@@ -39,7 +46,7 @@ export function ActionPage() {
 function ActionDetail({ id }: { id: string }) {
   const { api } = useSession();
   const load = useCallback<Load<Schemas["ActionCard"]>>((api, signal) =>
-    call(api.GET("/api/actions/{action_id}", { signal, params: { path: { action_id: id } } })), [id]);
+    call(api.GET("/api/actions/{action_id}", { signal, cache: "no-store", params: { path: { action_id: id } } })), [id]);
   const { state, reload, replace } = useApiData(api, load);
   usePolling(state.status === "ready" && isOpen(state.data), reload);
   if (state.status === "loading") return <Loading />;
