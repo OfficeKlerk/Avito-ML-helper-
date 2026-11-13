@@ -1,6 +1,6 @@
 # Все команды работают через Docker: локально нужны только Docker и make.
 COMPOSE := docker compose
-SERVICES := agent knowledge-service core-api corp-mock
+SERVICES := agent knowledge-service core-api corp-mock web-app
 
 TEST_CONTEXTS := --build-context contracts=./contracts --build-context fixtures=./fixtures --build-context data=./data
 
