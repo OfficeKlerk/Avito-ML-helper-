@@ -36,7 +36,7 @@ contracts: ## Проверить контракты, примеры и тест�
 smoke: up stubs-up ## Сквозная проверка: /health сервисов и все примеры контрактов через заглушки
 	$(COMPOSE) --profile tools run --rm --no-deps devkit python -m devkit.smoke
 
-test: $(addprefix test-,$(SERVICES)) test-devkit test-knowledge-agent ## Тесты всех сервисов и инструментов
+test: $(addprefix test-,$(SERVICES)) test-core-api-db test-devkit test-knowledge-agent ## Тесты всех сервисов и инструментов
 
 $(addprefix test-,$(SERVICES)): test-%: ## Тесты одного сервиса: make test-agent
 	docker build -q --target test $(TEST_CONTEXTS) -t ai-buddy-$*-test ./$* >/dev/null

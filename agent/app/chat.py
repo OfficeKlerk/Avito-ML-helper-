@@ -27,8 +27,8 @@ NOT_DONE = re.compile(r"\b(?:не|будет|будут|после|когда|ч
 EXISTING = re.compile(r"\bждёт\b|\bждет\b|ожида\w*", re.IGNORECASE)
 ALREADY = re.compile(r"\bуже\b", re.IGNORECASE)
 CREATED = re.compile(r"созда|подготов|оформ", re.IGNORECASE)
-NO_DRAFT_TEXT = ("Черновик заявки не создан: сервис заявок не подтвердил создание. "
-                 "Попробуй ещё раз чуть позже — я помогу оформить заново.")
+NO_DRAFT_TEXT = ("В этом ответе я не создавал черновик заявки. Если ты уже оформлял её раньше, карточка есть "
+                 "в истории действий. Чтобы оформить новую, напиши даты или систему ещё раз.")
 
 
 def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,

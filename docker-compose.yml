@@ -44,7 +44,7 @@ services:
     build: { context: ./corp-mock, target: runtime }
     environment:
       PORT: "8070"
-      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-32-bytes-min}
       DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=corp&sslmode=disable
       SEED_DIR: /data/seed
     volumes:
@@ -61,7 +61,7 @@ services:
     build: { context: ./knowledge-service, target: runtime }
     environment:
       PORT: "8060"
-      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-32-bytes-min}
       KB_DIR: /data/kb
     volumes:
       - ./data:/data:ro
@@ -100,7 +100,7 @@ services:
     build: { context: ./core-api, target: runtime }
     environment:
       PORT: "8080"
-      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
+      JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me-32-bytes-min}
       DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=core&sslmode=disable
       AGENT_URL: ${CORE_AGENT_URL:-http://agent:8090}
       CORP_MOCK_URL: ${CORE_CORP_MOCK_URL:-http://corp-mock:8070}

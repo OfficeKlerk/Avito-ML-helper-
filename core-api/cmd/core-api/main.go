@@ -49,7 +49,9 @@ func run(ctx context.Context, logger *slog.Logger) error {
 		return errors.New("database_config_invalid")
 	}
 	defer db.Close()
-	db.SetMaxOpenConns(10)
+	// Каждый идущий разговор держит соединение, пока ждёт агента (блокировка диалога в PostgreSQL),
+	// поэтому запас нужен и на чаты, и на остальные запросы. У PostgreSQL по умолчанию 100 соединений.
+	db.SetMaxOpenConns(40)
 	startup, cancel := context.WithTimeout(ctx, 45*time.Second)
 	err = store.Initialize(startup, db, seedDir)
 	cancel()

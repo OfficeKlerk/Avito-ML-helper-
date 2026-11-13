@@ -233,13 +233,13 @@ def test_false_claim_without_draft_is_replaced(body, tools):
     tools.responses["absence_create_draft"] = ToolError("unavailable", "Сервис временно недоступен.")
     model = ScriptedModel(call(("absence_create_draft", DRAFT_ARGS)), say("Готово! Черновик заявки на 13.11 создан."))
     result = run(body, tools, model)
-    assert result["text"].startswith("Черновик заявки не создан") and result["proposed_actions"] == []
+    assert result["text"].startswith("В этом ответе я не создавал черновик") and result["proposed_actions"] == []
     assert result["status"] == "degraded"
 
 
 def test_made_up_claim_without_any_call_is_replaced(body, tools):
     model = ScriptedModel(say("Я подготовил черновик заявки на пятницу, подтверди его."))
-    assert run(body, tools, model)["text"].startswith("Черновик заявки не создан")
+    assert run(body, tools, model)["text"].startswith("В этом ответе я не создавал черновик")
 
 
 def test_true_claim_with_draft_is_kept(body, tools):
@@ -269,3 +269,13 @@ def test_dialog_continues_when_model_fails_on_the_date(body, tools):
     second = run(body, FakeTools(default_responses()), ScriptedModel(LlmError("упала")))
     assert second["status"] == "degraded"
     assert second["proposed_actions"][0]["fields"]["Даты"] == "13.11.2026"
+
+
+def test_model_gets_only_recent_and_trimmed_history(body, tools):
+    body["history"] = [{"role": "user" if i % 2 == 0 else "assistant", "text": f"сообщение {i} " + "х" * 5000}
+                       for i in range(20)]
+    model = ScriptedModel(say("Готово."))
+    run(body, tools, model)
+    sent = [m for m in model.requests[0][0] if m["role"] in ("user", "assistant")][:-1]  # без текущего сообщения
+    assert len(sent) == 10 and sent[0]["content"].startswith("сообщение 10 ")
+    assert all(len(m["content"]) <= 1500 for m in sent)

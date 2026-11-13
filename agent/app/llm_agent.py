@@ -16,6 +16,8 @@ from .llm import ChatModel, LlmError
 from .reply import HIDDEN_FRAGMENT, looks_like_instructions, response
 from .tools import Tools, ToolError
 
+# Модели хватает недавнего контекста; длинная история дорожает, замедляет ответ и упирается в окно модели.
+HISTORY_MESSAGES, HISTORY_MESSAGE_CHARS = 10, 1500
 PROMPTS_DIR = Path(os.environ.get("PROMPTS_DIR") or Path(__file__).resolve().parents[1] / "prompts")
 CORP_TOOLS = ("directory_find_contact", "absence_get_rules", "absence_create_draft", "access_list_my", "access_create_draft")
 
@@ -40,7 +42,8 @@ def answer_with_model(body: dict[str, Any], ctx: Context, tools: Tools, model: C
     messages: list[dict[str, Any]] = [
         {"role": "system", "content": system_prompt()},
         {"role": "system", "content": "Контекст пользователя:\n" + to_prompt(ctx)},
-        *({"role": item["role"], "content": item["text"]} for item in body["history"]),
+        *({"role": item["role"], "content": item["text"][:HISTORY_MESSAGE_CHARS]}
+          for item in body["history"][-HISTORY_MESSAGES:]),
         {"role": "user", "content": body["message"]},
     ]
     definitions = tool_definitions()
