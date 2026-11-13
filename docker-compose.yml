@@ -45,7 +45,7 @@ services:
     environment:
       PORT: "8070"
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
-      DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=corp
+      DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=corp&sslmode=disable
       SEED_DIR: /data/seed
     volumes:
       - ./data:/data:ro
@@ -101,9 +101,9 @@ services:
     environment:
       PORT: "8080"
       JWT_SECRET: ${JWT_SECRET:-local-dev-secret-change-me}
-      DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=core
-      AGENT_URL: http://agent:8090
-      CORP_MOCK_URL: http://corp-mock:8070
+      DATABASE_URL: postgres://${POSTGRES_USER:-buddy}:${POSTGRES_PASSWORD:-buddy}@postgres:5432/${POSTGRES_DB:-buddy}?search_path=core&sslmode=disable
+      AGENT_URL: ${CORE_AGENT_URL:-http://agent:8090}
+      CORP_MOCK_URL: ${CORE_CORP_MOCK_URL:-http://corp-mock:8070}
       SEED_DIR: /data/seed
     volumes:
       - ./data:/data:ro

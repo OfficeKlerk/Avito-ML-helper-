@@ -4,7 +4,7 @@ SERVICES := agent knowledge-service core-api corp-mock
 
 TEST_CONTEXTS := --build-context contracts=./contracts --build-context fixtures=./fixtures --build-context data=./data
 
-.PHONY: help up down logs ps health stubs-up stubs-down contracts smoke test test-devkit eval eval-knowledge test-knowledge-agent $(addprefix test-,$(SERVICES))
+.PHONY: help up down logs ps health stubs-up stubs-down contracts smoke test test-devkit eval eval-knowledge test-knowledge-agent test-core-api-db $(addprefix test-,$(SERVICES))
 
 help: ## Показать команды
 	@grep -E '^[a-zA-Z_%-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-22s %s\n", $$1, $$2}'
@@ -57,3 +57,10 @@ eval-knowledge: ## Качество поиска: BM25 baseline и улучше�
 test-knowledge-agent: ## Настоящие agent и knowledge-service по HTTP, без LLM и заглушки поиска
 	docker build -q -f integration/Dockerfile --build-context agent=./agent --build-context knowledge=./knowledge-service -t ai-buddy-knowledge-agent-test . >/dev/null
 	docker run --rm ai-buddy-knowledge-agent-test
+
+test-core-api-db: ## Тесты core-api с PostgreSQL и покрытие внутренних пакетов (тестовая база пересоздаётся)
+	$(COMPOSE) up -d --wait postgres
+	$(COMPOSE) exec -T postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -qc "DROP DATABASE IF EXISTS buddy_core_test" && psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -qc "CREATE DATABASE buddy_core_test"'
+	docker run --rm --network ai-buddy_default -v "$(CURDIR):/repo:ro" -w /repo/core-api -e GOFLAGS=-buildvcs=false \
+		-e CORE_TEST_DATABASE_URL="postgres://$${POSTGRES_USER:-buddy}:$${POSTGRES_PASSWORD:-buddy}@postgres:5432/buddy_core_test?sslmode=disable" \
+		golang:1.23-alpine sh -c 'go test ./... -count=1 -coverpkg=./internal/... -coverprofile=/tmp/cover.out && go tool cover -func=/tmp/cover.out | tail -1'
