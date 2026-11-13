@@ -1,0 +1,23 @@
+# Один адрес для браузера: статика интерфейса и /api в core-api. Подробнее маршруты и таймауты — задача D2.
+server {
+    listen 80;
+    root /usr/share/nginx/html;
+
+    location /api/ {
+        # CORE_API_URL без пути, например http://core-api:8080: тогда /api/... уходит как есть.
+        proxy_pass ${CORE_API_URL};
+        # Ответ в чате ждёт агента с моделью.
+        proxy_read_timeout 90s;
+    }
+
+    # index.html всегда проверяем заново: иначе после пересборки браузер возьмёт старый
+    # и не найдёт удалённые assets/*.js. Файлы с хешем в имени кешируются как обычно.
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    location / {
+        # Прямые ссылки на страницы приложения отдают index.html.
+        try_files $uri /index.html;
+    }
+}
