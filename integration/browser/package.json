@@ -2,7 +2,9 @@
   "private": true,
   "scripts": {
     "test": "playwright test onboarding.spec.mjs",
-    "test:requests": "node run-requests.mjs"
+    "test:requests": "node run-requests.mjs",
+    "test:model": "node run-requests.mjs model",
+    "test:recovery": "node run-requests.mjs recovery"
   },
   "devDependencies": {
     "@playwright/test": "1.65.0"
