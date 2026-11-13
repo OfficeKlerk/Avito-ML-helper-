@@ -1,0 +1,6 @@
+services:
+  knowledge-service:
+    environment:
+      KB_DIR: /q2-kb
+    volumes:
+      - ${Q2_KB_DIR}:/q2-kb:ro
