@@ -11,7 +11,7 @@ import (
 func do(t *testing.T, method, path string) (*httptest.ResponseRecorder, map[string]any) {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	NewHandler("0.1.0").ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+	NewHandler("0.1.0", nil).ServeHTTP(rec, httptest.NewRequest(method, path, nil))
 	var body map[string]any
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatalf("ответ не JSON: %v: %s", err, rec.Body.String())

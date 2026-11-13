@@ -52,27 +52,18 @@ curl -fsS http://localhost:8080/api/actions -H "Authorization: Bearer $TOKEN"
 задачу агент не переоткрывает. Закрытие задачи, требующей выдачи доступа,
 требует подтверждения выдачи корпоративным сервисом.
 
-Для локальной проверки с настоящим агентом и заглушкой контрактов C и D запусти:
-
-```bash
-make stubs-up
-AGENT_MCP_URL=http://stub-corp-mock:8070/mcp CORE_CORP_MOCK_URL=http://stub-corp-mock:8070 make up
-```
-
-Сервис `corp-mock` в этом снимке отвечает на `/health`. Для запросов заявок
-используй заглушку либо укажи адрес реализации контрактов C и D. Заглушка из
-`devkit` возвращает ответы из примеров и подходит для демонстрации отдельных вызовов.
-Тест Go с PostgreSQL использует HTTP-заглушку, которая меняет и запоминает статусы.
+После `make up` агент вызывает MCP [corp-mock](../corp-mock/README.md), а
+core-api отправляет и отменяет заявки по REST.
 
 ```bash
 curl -fsS http://localhost:8080/api/chat/messages \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  -d '{"text":"Что мне делать дальше?"}'
+  -d '{"text":"Хочу взять отгул завтра"}'
 
-# Тестовая карточка Анны, загружается при старте.
-curl -fsS -X POST http://localhost:8080/api/actions/act_anna_dayoff_1/confirm \
+# Возьми id из assistant_message.actions в ответе и запиши его в ACTION_ID.
+curl -fsS -X POST "http://localhost:8080/api/actions/$ACTION_ID/confirm" \
   -H "Authorization: Bearer $TOKEN" -H 'Idempotency-Key: confirm-demo-0001'
-curl -fsS -X POST http://localhost:8080/api/actions/act_anna_dayoff_1/cancel \
+curl -fsS -X POST "http://localhost:8080/api/actions/$ACTION_ID/cancel" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
