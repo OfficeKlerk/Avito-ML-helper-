@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, expect, test, vi } from "vitest";
 import { routes } from "../../app/routes";
@@ -163,4 +163,86 @@ test("Markdown форматирует текст без выполнения HTM
   expect(screen.getByRole("link", { name: "Открыть" })).toHaveAttribute("href", "https://example.com/help");
   expect(screen.getAllByRole("link")).toHaveLength(1);
   expect(screen.queryByRole("img")).not.toBeInTheDocument();
+});
+
+test("подсказка отправляет новый вопрос через chat POST и блокируется до ответа", async () => {
+  const fixture = fixtureFetch();
+  const post = vi.fn(async (request: Request) => fixture(request));
+  open("/chat", (request) => request.method === "POST" ? post(request) : fixture(request));
+  const suggestion = await screen.findByRole("button", { name: "Каких доступов мне не хватает?" });
+  fireEvent.click(suggestion);
+  fireEvent.click(suggestion);
+  expect(suggestion).toBeDisabled();
+  await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
+  expect(post.mock.calls[0][0].headers.get("Idempotency-Key")).toMatch(/^[a-f0-9]{32}$/);
+  expect(await post.mock.calls[0][0].json()).toEqual({ text: "Каких доступов мне не хватает?" });
+  await waitFor(() => expect(suggestion).toBeEnabled());
+});
+
+test("при потере сети сообщение остаётся доступно для повтора, а 401 ведёт на вход с исходным адресом", async () => {
+  const fixture = fixtureFetch({ chat_messages_list: "no_messages", chat_message_post: "no_token" });
+  let online = false;
+  const posts: Request[] = [];
+  const { router } = open("/chat", async (request) => {
+    if (request.method === "POST") {
+      posts.push(request);
+      if (!online) throw new TypeError("network offline");
+    }
+    return fixture(request);
+  });
+  await screen.findByText(/Задай первый вопрос/);
+  typeMessage("Проверка сети");
+  fireEvent.click(screen.getByRole("button", { name: "Отправить" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent(/Нет связи с сервером/);
+  expect(screen.getByRole("textbox", { name: "Сообщение" })).toHaveValue("Проверка сети");
+  online = true;
+  fireEvent.click(screen.getByRole("button", { name: "Повторить отправку" }));
+  expect(await screen.findByRole("heading", { name: "Вход в AI-buddy" })).toBeInTheDocument();
+  expect(new URLSearchParams(router.state.location.search).get("returnTo")).toBe("/chat");
+  expect(posts).toHaveLength(2);
+  expect(posts[0].headers.get("Idempotency-Key")).toBe(posts[1].headers.get("Idempotency-Key"));
+  expect(sessionStorage.getItem("ai-buddy.token")).toBeNull();
+});
+
+test("чат и история показывают один сохранённый статус, подтверждение требует диалога", async () => {
+  const fixture = fixtureFetch();
+  const confirm = await (await fixture(new Request("http://localhost/api/actions/act_anna_dayoff_1/confirm", { method: "POST" }))).json();
+  let submitted = false;
+  const post = vi.fn(async () => { submitted = true; return Response.json(confirm); });
+  const { router } = open("/chat", async (request) => {
+    const path = new URL(request.url).pathname;
+    if (path.endsWith("/confirm")) return post();
+    const response = await fixture(request);
+    if (submitted && path === "/api/actions") {
+      const body = await response.json();
+      body.actions[0] = confirm;
+      return Response.json(body);
+    }
+    if (submitted && path === "/api/actions/act_anna_dayoff_1") return Response.json(confirm);
+    return response;
+  });
+  const prototype = HTMLDialogElement.prototype;
+  const show = Object.getOwnPropertyDescriptor(prototype, "showModal");
+  const close = Object.getOwnPropertyDescriptor(prototype, "close");
+  Object.defineProperties(prototype, {
+    showModal: { configurable: true, value(this: HTMLDialogElement) { this.open = true; } },
+    close: { configurable: true, value(this: HTMLDialogElement) { this.open = false; } },
+  });
+  try {
+    const openConfirm = await screen.findByRole("button", { name: "Отправить на согласование" });
+    fireEvent.click(openConfirm);
+    const approve = within(screen.getByRole("dialog")).getByRole("button", { name: "Отправить" });
+    expect(post).not.toHaveBeenCalled();
+    fireEvent.click(approve);
+    fireEvent.click(approve);
+    expect(await screen.findByText("На согласовании")).toBeInTheDocument();
+    expect(post).toHaveBeenCalledTimes(1);
+    await act(() => router.navigate("/actions"));
+    expect(await screen.findByText(confirm.result.external_ref)).toBeInTheDocument();
+  } finally {
+    if (show) Object.defineProperty(prototype, "showModal", show);
+    else Reflect.deleteProperty(prototype, "showModal");
+    if (close) Object.defineProperty(prototype, "close", close);
+    else Reflect.deleteProperty(prototype, "close");
+  }
 });

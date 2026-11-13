@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useSession } from "../../app/session";
 import { ApiError, call, newIdempotencyKey, type Api, type Schemas } from "../../shared/api/client";
+import { useApiData, type Load } from "../../shared/api/useApiData";
+import { ActionItem } from "../actions/ActionItem";
 import { Button, ErrorMessage, Loading, Status } from "../../shared/ui/controls";
 import { formatDocumentDate, getDocument, sourceUrl } from "./documents";
 import { Markdown } from "./Markdown";
@@ -31,6 +33,19 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
   const [historyAttempt, setHistoryAttempt] = useState(0);
   const sources = useSourceMetadata(api, history && "messages" in history ? history.messages : undefined);
   const messageLength = Array.from(draft.trim()).length;
+  const hasCards = !!(history && "messages" in history && history.messages.some(({ actions }) => actions.length > 0));
+  const [actionUpdates, setActionUpdates] = useState<Record<string, Schemas["ActionCard"]>>({});
+  const loadActions = useCallback<Load<Schemas["ActionCardList"]>>((api, signal) => hasCards
+    ? call(api.GET("/api/actions", { signal }))
+    : Promise.resolve({ actions: [] }), [hasCards]);
+  const actions = useApiData(api, loadActions);
+  const actionById = new Map(actions.state.status === "ready" ? actions.state.data.actions.map((action) => [action.id, action]) : []);
+  const blocked = !!activeSend.current || !history || "error" in history;
+
+  function updateAction(updated: Schemas["ActionCard"]) {
+    setActionUpdates((current) => ({ ...current, [updated.id]: updated }));
+    actions.reload();
+  }
 
   useEffect(() => {
     const controller = new AbortController();
@@ -45,15 +60,22 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
 
   useEffect(() => () => { activeSend.current?.abort(); }, []);
 
-  async function send(event: FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (activeSend.current || !history || "error" in history || messageLength === 0 || messageLength > messageLimit) return;
+    void send(draft);
+  }
 
-    const turn = pending ?? { key: newIdempotencyKey(), text: draft.trim() };
+  async function send(text: string) {
+    const trimmed = text.trim();
+    const length = Array.from(trimmed).length;
+    if (activeSend.current || !history || "error" in history || length === 0 || length > messageLimit) return;
+
+    const turn = pending ?? { key: newIdempotencyKey(), text: trimmed };
     const controller = new AbortController();
     activeSend.current = controller;
     savePendingTurn(userId, turn);
     setPending(turn);
+    setDraft(turn.text);
     setSending(true);
     setSendError("");
     try {
@@ -66,13 +88,14 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
       clearPendingTurn();
       setPending(null);
       setDraft("");
+      if (hasCards && assistant_message.actions.length) actions.reload();
       setHistory((current) => {
         if (!current || "error" in current) return current;
         const byId = new Map(current.messages.map((message) => [message.id, message]));
         byId.set(user_message.id, user_message);
         byId.set(assistant_message.id, assistant_message);
         const messages = [...byId.values()].sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
-        return { messages: messages.slice(-historyLimit) };
+        return { messages };
       });
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -96,6 +119,9 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
   return (
     <section className="page-stack">
       <h1>Чат</h1>
+      <div className="chat-announcement" role="status" aria-atomic="true">
+        {sending ? "Ждём ответа помощника…" : ""}
+      </div>
       {!history ? <Loading>Загружаем историю…</Loading> : "error" in history ? (
         <ErrorMessage onRetry={() => {
           setHistory(null);
@@ -103,14 +129,25 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
         }}>{history.error}</ErrorMessage>
       ) : history.messages.length ? (
         <ol className="plain-list message-list" aria-label="История диалога">
-          {history.messages.map((message) => <ChatMessage key={message.id} message={message} sources={sources} />)}
+          {hasCards && actions.state.status === "error" && <li>
+            <ErrorMessage onRetry={actions.reload}>{actions.state.message}</ErrorMessage>
+          </li>}
+          {history.messages.map((message) => <ChatMessage key={message.id} message={message} sources={sources}
+            actionCards={message.actions.map(({ id, title }) => {
+              const saved = actionById.get(id);
+              const updated = actionUpdates[id];
+              const action = updated && (!saved || Date.parse(updated.updated_at) > Date.parse(saved.updated_at)) ? updated : saved;
+              const link = <Link to={`/actions/${encodeURIComponent(id)}`}>Открыть заявку «{title}»</Link>;
+              return <div key={id}>{action ? <ActionItem action={action} onChange={updateAction} footer={link} /> : link}</div>;
+            })}
+            onSuggestion={blocked || pending ? undefined : (text) => void send(text)} />)}
         </ol>
       ) : (
         <div className="panel empty-state">
           <p>Задай первый вопрос. Например, спроси, что делать дальше или во сколько у команды стендап.</p>
         </div>
       )}
-      <form className="panel content-panel chat-form" onSubmit={send}>
+      <form className="panel content-panel chat-form" onSubmit={submit}>
         <div className="field">
           <label htmlFor="chat-message">Сообщение</label>
           <textarea id="chat-message" name="message" rows={3} value={draft} readOnly={!!pending}
@@ -121,7 +158,7 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
           </small>
         </div>
         {sendError && <ErrorMessage>{sendError}</ErrorMessage>}
-        {sending && <Loading>Ждём ответа помощника…</Loading>}
+        {sending && <p className="loading" aria-hidden="true"><span className="spinner" />Ждём ответа помощника…</p>}
         <Button type="submit" disabled={!history || "error" in history || messageLength === 0 || messageLength > messageLimit}
           busy={sending} busyLabel="Отправляем…">{pending ? "Повторить отправку" : "Отправить"}</Button>
       </form>
@@ -129,7 +166,12 @@ function Chat({ api, userId }: { api: Api; userId: string }) {
   );
 }
 
-function ChatMessage({ message, sources }: { message: Message; sources: ReadonlyMap<string, Metadata | null> }) {
+function ChatMessage({ message, sources, actionCards, onSuggestion }: {
+  message: Message;
+  sources: ReadonlyMap<string, Metadata | null>;
+  actionCards: ReactNode[];
+  onSuggestion?: (text: string) => void;
+}) {
   const assistant = message.role === "assistant";
   return (
     <li className={`panel message message--${message.role}`}>
@@ -140,6 +182,12 @@ function ChatMessage({ message, sources }: { message: Message; sources: Readonly
       </div>
       {assistant ? <Markdown text={message.text} /> : <p className="message-text">{message.text}</p>}
       {assistant && message.sources.length > 0 && <SourceList sources={message.sources} metadata={sources} />}
+      {assistant && actionCards.length > 0 && <div className="card-list">{actionCards}</div>}
+      {assistant && message.suggestions.length > 0 && <div className="button-row" role="group" aria-label="Следующие вопросы">
+        {[...new Set(message.suggestions)].map((text) => <Button key={text} tone="secondary"
+          disabled={!onSuggestion || !text.trim() || Array.from(text.trim()).length > messageLimit}
+          onClick={() => onSuggestion?.(text)}>{text}</Button>)}
+      </div>}
     </li>
   );
 }
