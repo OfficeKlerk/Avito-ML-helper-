@@ -52,7 +52,7 @@ python -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt -r requirements-dev.txt
 .venv/bin/python -m pytest
 .venv/bin/python -m evals.run --check
-JWT_SECRET=local-dev-secret-change-me KB_DIR=../data/kb \
+JWT_SECRET=local-dev-secret-change-me-32-bytes-min KB_DIR=../data/kb \
   .venv/bin/python -m gunicorn --bind 127.0.0.1:8060 --workers 2 'app:create_app()'
 ```
 
