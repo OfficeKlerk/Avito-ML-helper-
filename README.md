@@ -162,6 +162,8 @@ make reset-test-data CONFIRM=ai-buddy-local-test
 | [fixtures/](fixtures/README.md) | Примеры запросов и ответов к каждому контракту |
 | [data/](data/README.md) | Тестовые пользователи, задачи адаптации, заявки и база знаний |
 | [devkit/](devkit/README.md) | Проверка контрактов, заглушки сервисов, сквозная проверка |
+| [Архитектура и интеграции](docs/architecture/01_ARCHITECTURE.md) | Сервисы, границы доверия и подключение корпоративных систем |
+| [Браузерная проверка I2](docs/testing/01_BROWSER_JOURNEY.md) | Вход, адаптация, вопрос с источником и история для двух команд |
 | [openspec/specs/](openspec/specs/) | SDD-спецификации AI-функций |
 | `agent/` | Агент: A1–A8 готовы |
 | `knowledge-service/` | Загрузка документов, фрагменты, ACL, поиск и HTTP API; K1–K7 готовы |
