@@ -6,3 +6,5 @@ addopts = "-q --cov=devkit --cov-report=term-missing --cov-fail-under=80"
 [tool.coverage.run]
 branch = false
 source = ["devkit"]
+# fullstack.py — сама интеграционная проверка (тест), её прогоняет make integration на настоящих сервисах.
+omit = ["devkit/fullstack.py"]

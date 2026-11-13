@@ -85,7 +85,7 @@ def run(model: ChatModel | None, label: str) -> dict[str, Any]:
 
 
 def report_markdown(runs: list[dict[str, Any]], started: str) -> str:
-    lines = [f"# Проверка качества агента", "", f"Запуск: {started}. Случаев: {runs[0]['total']}. "
+    lines = ["# Проверка качества агента", "", f"Запуск: {started}. Случаев: {runs[0]['total']}. "
              "Среда: локальная база знаний и сервисы из `data/` (см. `evals/environment.py`).", "",
              "| Режим | Пройдено | " + " | ".join(GROUPS.values()) + " | Утечки | Нечестный текст | degraded |",
              "|---|---|" + "---|" * len(GROUPS) + "---|---|---|"]
