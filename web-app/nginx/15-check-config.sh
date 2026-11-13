@@ -1,6 +1,7 @@
 #!/bin/sh
-# Без адреса core-api страница откроется, но вход упадёт с 502 — лучше сразу остановиться с понятной ошибкой.
-if [ -z "$CORE_API_URL" ]; then
-    echo "web-app: не задан CORE_API_URL (адрес core-api без пути, например http://core-api:8080)" >&2
+# Вставляем в конфигурацию nginx только адрес без пути, параметров и учётных данных.
+if ! valid_url=$(printf '%s\n' "$CORE_API_URL" | grep -Ex 'https?://([A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(:[0-9]{1,5})?') ||
+    [ "$valid_url" != "$CORE_API_URL" ]; then
+    echo "web-app: CORE_API_URL должен быть HTTP(S)-адресом без пути, например http://core-api:8080" >&2
     exit 1
 fi

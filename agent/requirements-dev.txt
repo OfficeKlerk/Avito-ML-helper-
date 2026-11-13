@@ -1,2 +1,7 @@
+# Версии прямых и транзитивных зависимостей для Python 3.12.
+coverage==7.17.3
+iniconfig==2.3.1
+pluggy==1.7.0
+pygments==2.21.0
 pytest==9.2.0
 pytest-cov==7.1.0

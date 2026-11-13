@@ -1,16 +1,26 @@
 # Все команды работают через Docker: локально нужны только Docker и make.
-COMPOSE := docker compose
+COMPOSE := docker compose -f docker-compose.yml
+override LOCAL_TEST := env -u COMPOSE_PROFILES docker compose --project-name ai-buddy-local-test --env-file /dev/null -f docker-compose.yml
+export CONFIRM
 SERVICES := agent knowledge-service core-api corp-mock web-app
 
 TEST_CONTEXTS := --build-context contracts=./contracts --build-context fixtures=./fixtures --build-context data=./data
 
-.PHONY: help up down logs ps health stubs-up stubs-down contracts lint smoke integration test test-devkit eval eval-knowledge test-knowledge-agent test-core-api-db test-corp-mock-db $(addprefix test-,$(SERVICES))
+.PHONY: help up down logs ps health stubs-up stubs-down test-stack-up reset-test-data contracts lint smoke integration test test-devkit eval eval-knowledge test-knowledge-agent test-core-api-db test-corp-mock-db $(addprefix test-,$(SERVICES))
 
 help: ## Показать команды
 	@grep -E '^[a-zA-Z_%-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "} {printf "  make %-22s %s\n", $$1, $$2}'
 
 up: ## Собрать и запустить сервисы, интерфейс и PostgreSQL, дождаться готовности
 	$(COMPOSE) up -d --build --wait
+
+test-stack-up: ## Запустить отдельный локальный тестовый стенд с собственными данными
+	WEB_PORT=13000 LLM_PROVIDER=mock CORP_FAULT_TOKEN= AGENT_KNOWLEDGE_URL= AGENT_MCP_URL= \
+	CORE_AGENT_URL= CORE_CORP_MOCK_URL= CORE_KNOWLEDGE_URL= WEB_CORE_API_URL= $(LOCAL_TEST) up -d --build --wait
+
+reset-test-data: ## Удалить только данные отдельного тестового стенда (CONFIRM=ai-buddy-local-test)
+	@test "$$CONFIRM" = ai-buddy-local-test || { echo "Для сброса тестового стенда укажи CONFIRM=ai-buddy-local-test"; exit 1; }
+	$(LOCAL_TEST) --profile stubs --profile tools down --volumes --remove-orphans
 
 down: ## Остановить всё, включая заглушки (данные PostgreSQL сохраняются)
 	$(COMPOSE) --profile stubs --profile tools down
@@ -34,15 +44,14 @@ contracts: ## Проверить контракты, примеры и тест�
 	$(COMPOSE) --profile tools run --rm --no-deps --build devkit python -m devkit.validate
 
 lint: ## Проверка Python-кода ruff (Go — gofmt и vet, TypeScript — typecheck в тестах сервисов)
-	docker run --rm -v "$(CURDIR):/repo:ro" -w /repo python:3.12-slim sh -c 'pip install -q --disable-pip-version-check --root-user-action=ignore ruff==0.8.6 && ruff check --no-cache agent knowledge-service devkit integration'
+	docker run --rm -v "$(CURDIR):/repo:ro" -w /repo python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b sh -c 'pip install -q --disable-pip-version-check --root-user-action=ignore ruff==0.8.6 && ruff check --no-cache agent knowledge-service devkit integration'
 
 smoke: up stubs-up ## Сквозная проверка: /health сервисов и все примеры контрактов через заглушки
 	$(COMPOSE) --profile tools run --rm --no-deps devkit python -m devkit.smoke
 
 # Отдельный стенд для I1: свой проект, порты и чистая база, без LLM и без переопределений на заглушки из .env.
-IT := COMPOSE_PROJECT_NAME=ai-buddy-it WEB_PORT=23000 CORE_API_PORT=28080 AGENT_PORT=28090 CORP_MOCK_PORT=28070 \
-	KNOWLEDGE_PORT=28060 POSTGRES_PORT=25432 LLM_PROVIDER=mock AGENT_KNOWLEDGE_URL= AGENT_MCP_URL= \
-	CORE_AGENT_URL= CORE_CORP_MOCK_URL= CORE_KNOWLEDGE_URL= WEB_CORE_API_URL= docker compose
+IT := COMPOSE_PROJECT_NAME=ai-buddy-it WEB_PORT=23000 LLM_PROVIDER=mock AGENT_KNOWLEDGE_URL= AGENT_MCP_URL= \
+	CORE_AGENT_URL= CORE_CORP_MOCK_URL= CORE_KNOWLEDGE_URL= WEB_CORE_API_URL= $(COMPOSE)
 
 integration: ## I1: контракты A–E на настоящих сервисах с чистой базой; лог стенда — reports/integration-compose.log
 	@mkdir -p reports
@@ -81,7 +90,7 @@ define go-db-test
 	$(COMPOSE) exec -T postgres sh -c 'psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -qc "DROP DATABASE IF EXISTS $(2)" && psql -U "$$POSTGRES_USER" -d "$$POSTGRES_DB" -qc "CREATE DATABASE $(2)"'
 	docker run --rm --network ai-buddy_default -v "$(CURDIR):/repo:ro" -w /repo/$(1) -e GOFLAGS=-buildvcs=false \
 		-e $(3)="postgres://$${POSTGRES_USER:-buddy}:$${POSTGRES_PASSWORD:-buddy}@postgres:5432/$(2)?sslmode=disable" \
-		golang:1.23-alpine sh -c 'go test ./... -count=1 -v -coverpkg=./internal/... -coverprofile=/tmp/cover.out > /tmp/test.log 2>&1; status=$$?; \
+		golang:1.23-alpine@sha256:383395b794dffa5b53012a212365d40c8e37109a626ca30d6151c8348d380b5f sh -c 'go test ./... -count=1 -v -coverpkg=./internal/... -coverprofile=/tmp/cover.out > /tmp/test.log 2>&1; status=$$?; \
 		grep -E "^(ok|FAIL|--- FAIL|--- SKIP)" /tmp/test.log; \
 		if grep -q -- "--- SKIP" /tmp/test.log; then echo "Тесты с базой пропущены — так быть не должно"; exit 1; fi; \
 		if [ $$status -ne 0 ]; then grep -B2 -A20 -- "--- FAIL" /tmp/test.log | head -80; exit $$status; fi; \

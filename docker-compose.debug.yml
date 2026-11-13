@@ -1,0 +1,12 @@
+# Прямые адреса для локальных инструментов и отладки.
+services:
+  postgres:
+    ports: ["127.0.0.1:${POSTGRES_PORT:-15432}:5432"]
+  core-api:
+    ports: ["127.0.0.1:${CORE_API_PORT:-8080}:8080"]
+  corp-mock:
+    ports: ["127.0.0.1:${CORP_MOCK_PORT:-8070}:8070"]
+  knowledge-service:
+    ports: ["127.0.0.1:${KNOWLEDGE_PORT:-8060}:8060"]
+  agent:
+    ports: ["127.0.0.1:${AGENT_PORT:-8090}:8090"]
