@@ -44,6 +44,7 @@ type Backend interface {
 	SyncAction(context.Context, store.ActionRecord, store.ActionChange) error
 	Notifications(context.Context, string) (json.RawMessage, error)
 	MarkNotificationRead(context.Context, string, int64) (json.RawMessage, error)
+	RecordClientEvent(context.Context, string, store.ClientEvent) (time.Time, error)
 	WithChat(context.Context, string, func(*store.ChatSession) error) error
 	ChangeAction(context.Context, string, string, string, func(store.ActionRecord) (store.ActionChange, error)) (json.RawMessage, error)
 }
@@ -84,6 +85,7 @@ func NewHandler(version string, db Backend, jwtSecret string, now func() time.Ti
 	mux.HandleFunc("GET /api/notifications", a.requireUser(a.listNotifications))
 	mux.HandleFunc("PATCH /api/notifications/{notification_id}", a.requireUser(a.markNotificationRead))
 	mux.HandleFunc("GET /api/knowledge/documents/{doc_id}", a.requireUser(a.getDocument))
+	mux.HandleFunc("POST /api/metrics/events", a.requireUser(a.postEvent))
 	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
 		WriteError(w, http.StatusNotFound, "not_found", "Не найдено.")
 	})
