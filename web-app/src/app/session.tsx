@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
+import { Button, ErrorMessage, Loading } from "../shared/ui/controls";
 import { ApiError, call, createApi, type Api, type Schemas } from "../shared/api/client";
 
 export type User = Schemas["User"];
@@ -48,6 +49,7 @@ export function SessionProvider({ children, fetch }: { children: ReactNode; fetc
   tokenRef.current = token;
 
   const logout = useCallback(() => {
+    tokenRef.current = null;
     writeToken(null);
     setToken(null);
     setUser(null);
@@ -60,9 +62,14 @@ export function SessionProvider({ children, fetch }: { children: ReactNode; fetc
     if (!token || user) return;
     const controller = new AbortController();
     setError(null);
-    call(api.GET("/api/me", { signal: controller.signal })).then(setUser, (e) => {
-      if (e instanceof ApiError && e.code !== "unauthorized") setError(e.message);
-    });
+    call(api.GET("/api/me", { signal: controller.signal })).then(
+      (profile) => { if (!controller.signal.aborted && tokenRef.current === token) setUser(profile); },
+      (e: unknown) => {
+        if (!controller.signal.aborted && tokenRef.current === token && e instanceof ApiError && e.code !== "unauthorized") {
+          setError(e.message);
+        }
+      },
+    );
     return () => controller.abort();
   }, [api, token, user, attempt]);
 
@@ -91,16 +98,18 @@ export function useSession(): Session {
 export function RequireAuth() {
   const { token, user, error, logout, retry } = useSession();
   const location = useLocation();
-  if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
-  if (error) {
-    return (
-      <main>
-        <p role="alert">{error}</p>
-        <button type="button" onClick={retry}>Повторить</button>
-        <button type="button" onClick={logout}>Выйти</button>
-      </main>
-    );
+  if (!token) {
+    const returnTo = location.pathname + location.search + location.hash;
+    return <Navigate to={`/login?${new URLSearchParams({ returnTo })}`} replace state={{ from: location }} />;
   }
-  if (!user) return <p role="status">Проверяем вход…</p>;
+  if (error || !user) return (
+    <main className="standalone">
+      {error ? <>
+        <h1>Не удалось проверить вход</h1>
+        <ErrorMessage onRetry={retry}>{error}</ErrorMessage>
+        <Button tone="quiet" onClick={logout}>Выйти</Button>
+      </> : <Loading>Проверяем вход…</Loading>}
+    </main>
+  );
   return <Outlet key={user.id} />;
 }
