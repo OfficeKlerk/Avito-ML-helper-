@@ -13,8 +13,8 @@ async function json(response, status = 200) {
   return response.json();
 }
 
-async function signIn(page, login) {
-  await page.goto("/login");
+async function signIn(page, login, path = "/login") {
+  await page.goto(path);
   await page.getByLabel("Логин").fill(login);
   await page.getByLabel("Пароль").fill("buddy2026");
   const [response] = await Promise.all([
@@ -30,8 +30,11 @@ function auth(token) {
 }
 
 async function ask(page, text) {
-  const message = page.getByRole("textbox", { name: "Сообщение" });
-  await message.fill(text);
+  await page.getByRole("textbox", { name: "Сообщение" }).fill(text);
+  return send(page);
+}
+
+async function send(page) {
   const [response] = await Promise.all([
     page.waitForResponse(response =>
       new URL(response.url()).pathname === "/api/chat/messages" && response.request().method() === "POST"),
@@ -43,7 +46,10 @@ async function ask(page, text) {
 }
 
 async function draft(page, question, type) {
-  const reply = await ask(page, question);
+  return expectDraft(await ask(page, question), type);
+}
+
+function expectDraft(reply, type) {
   expect(reply.actions).toHaveLength(1);
   expect(reply.actions[0]).toMatchObject({ type, status: "draft" });
   return reply.actions[0];
@@ -160,8 +166,14 @@ test("I4: выдача доступа, связанная задача и огр
   await page.goto(accessTask);
   await expect(page.getByRole("main").getByText("К выполнению", { exact: true })).toBeVisible();
   await page.getByRole("link", { name: "Спросить в чате" }).click();
-  await expect(page.getByRole("textbox", { name: "Сообщение" })).toHaveValue(/пространство команды/);
-  const action = await draft(page, "Запроси доступ в пространство команды", "access_request");
+  const message = page.getByRole("textbox", { name: "Сообщение" });
+  await expect(message).toHaveValue("Запроси доступ в пространство команды");
+  await expect(message).toBeInViewport();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  const navigation = page.getByRole("navigation", { name: "Основная навигация" });
+  await expect(navigation.getByRole("link", { name: "Адаптация", exact: true })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "Выйти из аккаунта" })).toBeInViewport();
+  const action = expectDraft(await send(page), "access_request");
   const remote = corporateRequest(action);
   expect(await json(await request.get(remote, { headers }))).toMatchObject({
     status: "draft", payload: { system: "team_space" },
@@ -185,6 +197,8 @@ test("I4: выдача доступа, связанная задача и огр
   expect(granted).toMatchObject({ status: "approved", fulfilled_at: expect.any(String) });
   await page.goto(accessTask);
   await expect(page.getByRole("main").getByText("Выполнено", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Взять в работу" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Спросить в чате" })).toHaveCount(0);
   await page.getByRole("link", { name: "Связанная заявка" }).click();
   await expect(actionCard(page, action).getByText("Доступ выдан", { exact: true })).toBeVisible();
 
@@ -203,6 +217,11 @@ test("I4: выдача доступа, связанная задача и огр
   expect(denied.text).toContain("не предусмотрен для твоей команды");
   expect(denied.actions).toEqual([]);
   expect((await request.get(remote, { headers: other })).status()).toBe(403);
+
+  const document = await page.context().newPage();
+  await signIn(document, "intern_max", "/chat/sources/kb_delivery_rituals/standup");
+  await expect(document.getByText("У вас нет доступа к этому документу.")).toBeVisible();
+  await document.close();
 });
 
 test("I5: реальная модель, отгул и выдача доступа", async ({ page, request }, testInfo) => {
