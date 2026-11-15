@@ -88,6 +88,7 @@ function TaskBadges({ task }: { task: Task }) {
 
 function TaskDetail({ plan, taskId, onChanged }: { plan: Schemas["Onboarding"]; taskId: string; onChanged: (task: Task) => void }) {
   const task = plan.stages.flatMap((stage) => stage.tasks).find((item) => item.id === taskId);
+  const accessGranted = task?.status === "done" && task.related_action_type === "access_request";
   return <div className="panel content-panel">
     <Link to="/onboarding">Все задачи</Link>
     {task ? <>
@@ -96,11 +97,12 @@ function TaskDetail({ plan, taskId, onChanged }: { plan: Schemas["Onboarding"]; 
       {task.links.length > 0 && <ul className="plain-list">{task.links.map((link) => <li key={link.url}><SafeLink {...link} /></li>)}</ul>}
       <div className="button-row">
         {task.related_action_id && <Link to={`/actions/${encodeURIComponent(task.related_action_id)}${taskContext(task.id)}`}>Связанная заявка</Link>}
-        <Link to={`/chat${taskContext(task.id)}`}
-          state={{ question: `Помоги с задачей «${task.title}». Что нужно сделать?` }}>Спросить в чате</Link>
+        {!accessGranted && <Link to={`/chat${taskContext(task.id)}`}
+          state={{ question: task.id === "t_team_space" ? "Запроси доступ в пространство команды"
+            : `Помоги с задачей «${task.title}». Что нужно сделать?` }}>Спросить в чате</Link>}
       </div>
       {/* key: после обновления плана сбрасываем ошибку прошлой попытки */}
-      <StatusControl key={`${task.id}:${task.status}`} task={task} onChanged={onChanged} />
+      {task.status !== "done" && <StatusControl key={`${task.id}:${task.status}`} task={task} onChanged={onChanged} />}
     </> : <p role="status">Задача не найдена.</p>}
   </div>;
 }
@@ -115,6 +117,7 @@ function StatusControl({ task, onChanged }: { task: Task; onChanged: (task: Task
   const { api } = useSession();
   const [pending, setPending] = useState<TaskStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const requiresAccess = task.related_action_type === "access_request";
   async function move(status: TaskStatus) {
     setPending(status);
     setError(null);
@@ -130,9 +133,9 @@ function StatusControl({ task, onChanged }: { task: Task; onChanged: (task: Task
     }
   }
   return <div className="content-panel">
-    {task.related_action_type === "access_request" && task.status !== "done" &&
-      <p className="muted">Задача завершится, когда доступ выдадут. Отметить её выполненной раньше не получится.</p>}
-    <div className="button-row">{MOVES.filter(([status]) => status !== task.status).map(([status, label]) =>
+    {requiresAccess && <p className="muted">Задача завершится, когда доступ выдадут.</p>}
+    <div className="button-row">{MOVES.filter(([status]) =>
+      status !== task.status && !(requiresAccess && status === "done")).map(([status, label]) =>
       <Button key={status} tone={status === "done" ? "primary" : "secondary"} busy={pending === status} busyLabel="Сохраняем…"
         disabled={pending !== null} onClick={() => move(status)}>{label}</Button>)}
     </div>

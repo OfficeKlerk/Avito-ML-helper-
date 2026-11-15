@@ -64,6 +64,7 @@ test("задача на доступ предупреждает, что заве
   open("/onboarding/tasks/t_request_accesses");
   expect(await screen.findByText(/завершится, когда доступ выдадут/)).toBeInTheDocument();
   expect(screen.getByText("Как запросить доступы — документ базы знаний")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Отметить выполненной" })).not.toBeInTheDocument();
 });
 
 test("сроки и ссылки", () => {
@@ -114,6 +115,8 @@ test("задача открывает редактируемый вопрос и
   task.status = "done";
   fireEvent.click(screen.getByRole("link", { name: "Вернуться к задаче" }));
   expect(await screen.findByText("Выполнено")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Взять в работу" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("link", { name: "Спросить в чате" })).not.toBeInTheDocument();
 });
 
 test("фоновая ошибка оставляет план на экране, повтор обновляет данные", async () => {

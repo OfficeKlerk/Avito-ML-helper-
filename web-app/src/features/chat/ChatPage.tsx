@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import { useSession } from "../../app/session";
 import { ApiError, call, newIdempotencyKey, type Api, type Schemas } from "../../shared/api/client";
@@ -37,6 +37,7 @@ function Chat({ api, userId, taskId, initialDraft }: {
   const [sending, setSending] = useState(false);
   const activeSend = useRef<AbortController | null>(null);
   const [history, setHistory] = useState<History>(null);
+  const composer = useRef<HTMLFormElement>(null);
   const [historyAttempt, setHistoryAttempt] = useState(0);
   const sources = useSourceMetadata(api, history && "messages" in history ? history.messages : undefined);
   const messageLength = Array.from(draft.trim()).length;
@@ -66,6 +67,12 @@ function Chat({ api, userId, taskId, initialDraft }: {
   }, [api, historyAttempt]);
 
   useEffect(() => () => { activeSend.current?.abort(); }, []);
+
+  useLayoutEffect(() => {
+    if (history && "messages" in history && history.messages.length > 0) {
+      composer.current?.scrollIntoView?.({ block: "end" });
+    }
+  }, [history]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,7 +164,7 @@ function Chat({ api, userId, taskId, initialDraft }: {
           <p>Задай первый вопрос. Например, спроси, что делать дальше или во сколько у команды стендап.</p>
         </div>
       )}
-      <form className="panel content-panel chat-form" onSubmit={submit}>
+      <form ref={composer} className="panel content-panel chat-form" onSubmit={submit}>
         <div className="field">
           <label htmlFor="chat-message">Сообщение</label>
           <textarea id="chat-message" name="message" rows={3} value={draft} readOnly={!!pending}

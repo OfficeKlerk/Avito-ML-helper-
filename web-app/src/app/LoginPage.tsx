@@ -39,6 +39,7 @@ export function LoginPage() {
       <OfflineNotice />
       <section className="panel login-panel">
         <h1>Вход в AI-buddy</h1>
+        {from !== "/" && <p className="muted">Войди в этой вкладке, чтобы открыть страницу по ссылке.</p>}
         <form onSubmit={submit}>
           <Field label="Логин" name="login" autoComplete="username" required disabled={busy} />
           <Field label="Пароль" name="password" type="password" autoComplete="current-password" required disabled={busy} />
