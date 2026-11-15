@@ -36,12 +36,14 @@ def test_wrong_method_is_not_found(client):
     assert client.post("/health").get_json()["error"]["code"] == "not_found"
 
 
-def test_unexpected_error_hides_details(client):
+def test_unexpected_error_hides_details(client, caplog):
     response = client.get("/boom")
     assert response.status_code == 500
     body = response.get_json()
     assert body["error"]["code"] == "internal"
     assert "сломалось" not in body["error"]["message"]
+    assert "сломалось" not in caplog.text
+    assert "RuntimeError" in caplog.text
 
 
 def test_error_response_with_custom_message(app):

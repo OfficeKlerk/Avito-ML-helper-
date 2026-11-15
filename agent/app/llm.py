@@ -19,10 +19,13 @@ class ChatModel:
     base_url: str
     model: str
     api_key: str = ""
+    max_output_tokens: int | None = None
 
     def complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None, timeout: float) -> dict[str, Any]:
         """Сообщение ассистента: `content` и, если модель вызывает инструменты, `tool_calls`."""
         payload: dict[str, Any] = {"model": self.model, "messages": messages, "temperature": 0.2}
+        if self.max_output_tokens is not None:
+            payload["max_tokens"] = self.max_output_tokens
         if tools:
             payload["tools"] = tools
         headers = {"Content-Type": "application/json"}
@@ -54,8 +57,12 @@ def model_from_env() -> ChatModel | None:
     missing = [name for name in ("LLM_BASE_URL", "LLM_MODEL") if not os.environ.get(name, "").strip()]
     if missing:
         raise ValueError(f"LLM_PROVIDER=openai, но не заданы: {', '.join(missing)}")
+    raw_limit = os.environ.get("LLM_MAX_OUTPUT_TOKENS", "").strip()
+    if raw_limit and (not raw_limit.isascii() or not raw_limit.isdecimal() or not 1 <= int(raw_limit) <= 4096):
+        raise ValueError("LLM_MAX_OUTPUT_TOKENS должен быть целым числом от 1 до 4096")
     return ChatModel(
         base_url=os.environ["LLM_BASE_URL"].strip().rstrip("/"),
         model=os.environ["LLM_MODEL"].strip(),
         api_key=os.environ.get("LLM_API_KEY", "").strip(),
+        max_output_tokens=int(raw_limit) if raw_limit else None,
     )

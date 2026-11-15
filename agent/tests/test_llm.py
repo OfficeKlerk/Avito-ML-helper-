@@ -72,6 +72,17 @@ def test_without_tools_and_key(server, provider):
     ChatModel(base_url=server[1], model="m").complete([], None, timeout=2)
     payload, auth = provider.received[0]
     assert "tools" not in payload and auth is None
+    assert "max_tokens" not in payload
+
+
+def test_configured_token_limit_is_sent(server, provider, monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("LLM_BASE_URL", server[1])
+    monkeypatch.setenv("LLM_MODEL", "test-model")
+    monkeypatch.setenv("LLM_MAX_OUTPUT_TOKENS", "500")
+    model_from_env().complete([], None, timeout=2)
+    payload, _ = provider.received[0]
+    assert payload["max_tokens"] == 500
 
 
 @pytest.mark.parametrize("reply", [
@@ -104,7 +115,7 @@ def test_timeout_and_unreachable(model, provider):
      ChatModel(base_url="https://api.example.com/v1", model="m", api_key="k")),
 ])
 def test_model_from_env(monkeypatch, env, expected):
-    for name in ("LLM_PROVIDER", "LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"):
+    for name in ("LLM_PROVIDER", "LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY", "LLM_MAX_OUTPUT_TOKENS"):
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)
@@ -117,7 +128,7 @@ def test_model_from_env(monkeypatch, env, expected):
     ({"LLM_PROVIDER": "openai", "LLM_BASE_URL": "http://x"}, "LLM_MODEL"),
 ])
 def test_incomplete_settings_fail_at_start(monkeypatch, env, message):
-    for name in ("LLM_PROVIDER", "LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY"):
+    for name in ("LLM_PROVIDER", "LLM_BASE_URL", "LLM_MODEL", "LLM_API_KEY", "LLM_MAX_OUTPUT_TOKENS"):
         monkeypatch.delenv(name, raising=False)
     for name, value in env.items():
         monkeypatch.setenv(name, value)

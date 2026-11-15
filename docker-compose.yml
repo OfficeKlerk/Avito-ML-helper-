@@ -114,6 +114,7 @@ services:
     build: { context: ./web-app, target: runtime }
     environment:
       CORE_API_URL: ${WEB_CORE_API_URL:-http://core-api:8080}
+      PUBLIC_RATE_LIMIT: ${PUBLIC_RATE_LIMIT:-off}
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:80"
     depends_on:

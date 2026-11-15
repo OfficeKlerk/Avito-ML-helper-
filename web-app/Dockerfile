@@ -18,6 +18,7 @@ RUN npm run build
 
 # Статика и прокси /api в core-api на порту 80. Адрес core-api — CORE_API_URL.
 FROM nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236 AS runtime
+ENV PUBLIC_RATE_LIMIT=off
 COPY nginx/default.conf.template /etc/nginx/templates/
 COPY --chmod=755 nginx/15-check-config.sh /docker-entrypoint.d/
 COPY --from=build /srv/dist /usr/share/nginx/html

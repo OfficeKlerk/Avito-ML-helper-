@@ -62,11 +62,25 @@ jobs:
   integration:
     name: Общая сборка (I1)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: make integration
         run: make integration 2>&1 | tee reports-integration.log
+      - name: Проверка конфигурации HTTPS (D5)
+        env:
+          PUBLIC_DOMAIN: buddy.example.org
+          PUBLIC_ALLOWED_CIDRS: '203.0.113.10/32 2001:db8::42/128'
+          POSTGRES_PASSWORD: test-password
+          JWT_SECRET: local-ci-secret-for-config-validation
+        run: |
+          compose=(docker compose -f docker-compose.yml -f docker-compose.https.yml)
+          "${compose[@]}" config --quiet
+          "${compose[@]}" run --rm --no-deps --entrypoint caddy https validate --config /etc/caddy/Caddyfile --adapter caddyfile
+      - name: Проверка чистого запуска и отката (D6)
+        run: node integration/check-deployment.mjs
       - if: always()
         run: mkdir -p reports && mv reports-integration.log reports/integration.log
       - uses: actions/upload-artifact@v4

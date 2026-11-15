@@ -1,3 +1,7 @@
 https://{$PUBLIC_DOMAIN} {
-	reverse_proxy web-app:80
+	@outside not remote_ip {$PUBLIC_ALLOWED_CIDRS}
+	route {
+		respond @outside 403
+		reverse_proxy web-app:80
+	}
 }
