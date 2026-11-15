@@ -65,15 +65,22 @@ function down(tree) {
   compose(tree, ["down"]);
 }
 
-function request(path, { body, key, auth = true } = {}) {
-  const headers = {};
+async function request(path, { body, key, auth = true } = {}) {
+  const method = body || key ? "POST" : "GET";
+  // Compose replaces nginx on the same port between phases. Do not reuse its old sockets.
+  const headers = { Connection: "close" };
   if (key) headers["Idempotency-Key"] = key;
   if (auth && token) headers.Authorization = `Bearer ${token}`;
   if (body) headers["Content-Type"] = "application/json";
-  return fetch(`http://127.0.0.1:${port}${path}`, {
-    method: body || key ? "POST" : "GET", headers, body: body && JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000), redirect: "error",
-  });
+  try {
+    return await fetch(`http://127.0.0.1:${port}${path}`, {
+      method, headers, body: body && JSON.stringify(body),
+      signal: AbortSignal.timeout(60_000), redirect: "error",
+    });
+  } catch (error) {
+    const detail = error.cause?.code ?? error.cause?.message ?? error.message;
+    throw new Error(`${method} ${path}: ${detail}`, { cause: error });
+  }
 }
 
 async function json(path, options) {
