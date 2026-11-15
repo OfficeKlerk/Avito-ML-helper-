@@ -43,6 +43,19 @@ test.each([
   if (action.status === "failed") expect(screen.getByText("Сервис заявок не ответил.")).toBeInTheDocument();
 });
 
+test.each([
+  [card({ status: "approved" }), "Заявка согласована."],
+  [card({ type: "access_request", status: "approved" }), "Заявка согласована. Ожидается выдача доступа."],
+  [card({ type: "access_request", status: "approved", fulfilled_at: "2026-11-14T12:00:00+03:00" }), "Доступ выдан."],
+  [card({ status: "rejected" }), "Заявка отклонена."],
+])("после решения старая квитанция отправки не подменяет статус: %#", (action, message) => {
+  action.result = { message: "Заявка отправлена на согласование. Согласует Ольга Крылова.", external_ref: "ABS-001" };
+  render(<SessionProvider fetch={async () => new Response(null, { status: 500 })}><ActionItem action={action} onChange={() => {}} /></SessionProvider>);
+  expect(screen.getByText(message)).toBeInTheDocument();
+  expect(screen.getByText("ABS-001")).toBeInTheDocument();
+  expect(screen.queryByText(/отправлена на согласование/)).not.toBeInTheDocument();
+});
+
 /** Список заявок, где каждое следующее чтение отдаёт следующую версию карточек. */
 function openList(versions: Card[][]) {
   let reads = 0;

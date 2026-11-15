@@ -23,6 +23,14 @@ function statusLabel(action: Schemas["ActionCard"]): readonly [string, Tone] {
 
 export function ActionCard({ action, footer }: { action: Schemas["ActionCard"]; footer?: ReactNode }) {
   const [label, tone] = statusLabel(action);
+  // result хранит квитанцию отправки и после того, как опрос сменил статус: старая квитанция — уже неправда.
+  // Содержательную причину отказа сохраняем.
+  let message = action.result?.message;
+  if (action.status === "cancelled") message = "Заявка отменена.";
+  if (action.status === "approved") message = action.type === "access_request"
+    ? (action.fulfilled_at ? "Доступ выдан." : "Заявка согласована. Ожидается выдача доступа.")
+    : "Заявка согласована.";
+  if (action.status === "rejected" && (!message || message.startsWith("Заявка отправлена на согласование"))) message = "Заявка отклонена.";
   return (
     <article className="panel action-card">
       <div className="card-heading">
@@ -34,8 +42,7 @@ export function ActionCard({ action, footer }: { action: Schemas["ActionCard"]; 
         {action.external_id && <div><dt>Идентификатор заявки</dt><dd>{action.external_id}</dd></div>}
         {action.result?.external_ref && <div><dt>Номер заявки</dt><dd>{action.result.external_ref}</dd></div>}
       </dl>
-      {/* После отмены сохранённый текст отправки («ушла на согласование») уже неправда. */}
-      {action.status === "cancelled" ? <p>Заявка отменена.</p> : action.result?.message && <p>{action.result.message}</p>}
+      {message && <p>{message}</p>}
       {action.error && <p className="field-error">{action.error}</p>}
       {footer && <div className="card-footer">{footer}</div>}
     </article>
