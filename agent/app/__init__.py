@@ -69,7 +69,7 @@ def create_app(tools_factory: Callable[[str, str], Tools] = tools_from_env,
         body = request.get_json(silent=True)
         problems = ["тело запроса не JSON"] if body is None else contract.errors(body, "ChatRequest")
         if problems:
-            app.logger.info("запрос не по контракту B: %s", "; ".join(problems))
+            app.logger.info("запрос не по контракту B, ошибок: %d", len(problems))
             return error_response(422)
         try:
             tools = tools_factory(token, body["request_id"])
@@ -83,7 +83,7 @@ def create_app(tools_factory: Callable[[str, str], Tools] = tools_from_env,
 
     @app.errorhandler(Exception)
     def unexpected_error(exc: Exception):
-        app.logger.exception("необработанная ошибка: %s", exc)
+        app.logger.error("необработанная ошибка агента: %s", type(exc).__name__)
         return error_response(500)
 
     return app

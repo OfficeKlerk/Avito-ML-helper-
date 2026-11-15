@@ -1,4 +1,21 @@
+map "${PUBLIC_RATE_LIMIT}:$request_method:$uri" $login_limit_key {
+    default "";
+    "on:POST:/api/auth/login" "login";
+}
+map "${PUBLIC_RATE_LIMIT}:$request_method:$uri" $chat_limit_key {
+    default "";
+    "on:POST:/api/chat/messages" "chat";
+}
+limit_req_zone $login_limit_key zone=public_login:1m rate=20r/m;
+limit_req_zone $chat_limit_key zone=public_chat:1m rate=6r/m;
+map $upstream_http_x_request_id $diagnostic_id {
+    "" $request_id;
+    default $upstream_http_x_request_id;
+}
+log_format buddy '$request_method $status $request_time $diagnostic_id';
+
 server {
+    access_log /var/log/nginx/access.log buddy;
     listen 80;
     root /usr/share/nginx/html;
     absolute_redirect off;
@@ -7,7 +24,19 @@ server {
         return 308 /api/;
     }
 
+    location @rate_limited {
+        default_type application/json;
+        add_header Retry-After 10 always;
+        add_header X-Request-Id $diagnostic_id always;
+        return 429 '{"error":{"code":"rate_limited","message":"Слишком много запросов. Попробуй чуть позже."}}';
+    }
+
     location /api/ {
+        limit_req zone=public_login burst=10 nodelay;
+        limit_req zone=public_chat burst=3 nodelay;
+        limit_req_status 429;
+        limit_req_log_level info;
+        error_page 429 = @rate_limited;
         # CORE_API_URL содержит только схему, хост и порт. URI уходит как есть.
         proxy_pass ${CORE_API_URL};
         proxy_http_version 1.1;

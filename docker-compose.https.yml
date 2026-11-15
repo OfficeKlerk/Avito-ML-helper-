@@ -13,12 +13,21 @@ services:
   knowledge-service:
     environment:
       JWT_SECRET: ${JWT_SECRET:?Задайте отдельный JWT_SECRET для HTTPS-стенда}
+  agent:
+    environment:
+      LLM_PROVIDER: ${PUBLIC_LLM_PROVIDER:-mock}
+      LLM_TIMEOUT_SECONDS: "20"
+      LLM_MAX_TOOL_CALLS: "3"
+      LLM_MAX_OUTPUT_TOKENS: "500"
   web-app:
+    environment:
+      PUBLIC_RATE_LIMIT: "on"
     ports: !reset []
   https:
     image: caddy:2.11-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
     environment:
       PUBLIC_DOMAIN: ${PUBLIC_DOMAIN:?Укажите домен стенда в PUBLIC_DOMAIN}
+      PUBLIC_ALLOWED_CIDRS: ${PUBLIC_ALLOWED_CIDRS:?Укажите адреса участников в PUBLIC_ALLOWED_CIDRS}
     ports: ["80:80", "443:443"]
     volumes:
       - ./infra/https/Caddyfile:/etc/caddy/Caddyfile:ro
