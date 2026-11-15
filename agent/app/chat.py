@@ -29,6 +29,21 @@ ALREADY = re.compile(r"\bуже\b", re.IGNORECASE)
 CREATED = re.compile(r"созда|подготов|оформ", re.IGNORECASE)
 NO_DRAFT_TEXT = ("В этом ответе я не создавал черновик заявки. Если ты уже оформлял её раньше, карточка есть "
                  "в истории действий. Чтобы оформить новую, напиши даты или систему ещё раз.")
+# Только явное поручение, а не упоминание прежней заявки или вопрос о правилах.
+CREATE_ABSENCE = re.compile(
+    r"^(?:пожалуйста[,\s]+)?(?:подготовь|создай|оформи|хочу взять|хочу в отпуск|мне нужен отгул)\b", re.IGNORECASE)
+DATE_REPLY = re.compile(
+    r"^(?:(?:на|в|с)\s+)?(?:\d|сегодня|завтра|послезавтра|понедельник|вторник|сред|четверг|пятниц|суббот|воскресень)",
+    re.IGNORECASE)
+DECLINED_ABSENCE = re.compile(r"\b(?:не\s+(?:оформ|созда|подготов|нуж|надо|хочу)|отмен|передум)\w*", re.IGNORECASE)
+# Эти ответы проверяются по переданному контексту, а не по корпоративной базе знаний.
+# Реплика может состоять из нескольких вежливых фраз: «Привет, как дела», «Спасибо, всё понятно».
+SOCIAL = (r"(?:привет|здравствуй(?:те)?|добр(?:ый день|ый вечер|ое утро)|спасибо(?: большое)?|благодарю"
+          r"|(?:всё |все )?понятно|понял[аи]?|ясно|хорошо|отлично|ок(?:ей)?|как дела)")
+CONTEXT_OR_SOCIAL = re.compile(
+    rf"{SOCIAL}(?:[\s,!.]+{SOCIAL})*"
+    r"|(?:кто (?:мой|у меня) (?:наставник|руководитель)|как меня зовут|в какой я команде"
+    r"|какая у меня неделя стажировки|какой у меня прогресс(?: адаптации)?)", re.IGNORECASE)
 
 
 def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
@@ -47,7 +62,9 @@ def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
     if result is None:
         result = answer_by_rules(body, ctx, tools)
     elif not tools.drafts:
-        result = check_model_answer(result, body, ctx)
+        result = complete_omitted_tools(result, body, ctx, tools, max_tool_calls)
+        if not tools.drafts:
+            result = check_model_answer(result, body, ctx)
     # Черновики, созданные в этом запросе, всегда видны пользователю — даже если модель упала после создания.
     shown = {action["external_id"] for action in result["proposed_actions"]}
     missed = [draft_action(d) for d in {d["id"]: d for d in tools.drafts.values()}.values() if d["id"] not in shown]
@@ -59,6 +76,33 @@ def answer(body: dict[str, Any], tools: Tools, model: ChatModel | None = None,
     # Отказ по правам или неверные даты — нормальный ответ. Упрощённый режим — только когда сервис не ответил.
     if any(step["error_code"] == "unavailable" for step in tools.trace):
         result["status"] = "degraded"
+    return result
+
+
+def complete_omitted_tools(result: dict[str, Any], body: dict[str, Any], ctx: Context,
+                           tools: Tools, max_tool_calls: int) -> dict[str, Any]:
+    """История диалога не заменяет свежий поиск или квитанцию создания черновика.
+
+    Исполняем только пропущенные операции. Отказ сервиса не повторяем; карточку без
+    явного поручения не создаём. На поиск и возможную эскалацию оставляем два вызова.
+    """
+    called = [step["tool"] for step in tools.trace if step["tool"] != "llm"]
+    remaining = max_tool_calls - len(called)
+    nlu = understand(body["message"], ctx.today, body["state"])
+    message = body["message"].strip()
+    continuing = (body["state"] or {}).get("intent") == "absence_request" and DATE_REPLY.search(message)
+    if (nlu.intent == "absence" and nlu.date_from is not None
+            and (CREATE_ABSENCE.search(message) or continuing)
+            and not DECLINED_ABSENCE.search(message)
+            and "absence_create_draft" not in called and remaining >= 2):
+        return absence(ctx, nlu, tools, body["request_id"])
+    if (nlu.intent == "unknown" and not called
+            and not CONTEXT_OR_SOCIAL.fullmatch(message.rstrip(".!? "))):
+        if remaining >= 2:
+            # Не приклеиваем найденную ссылку к непроверенному тексту модели:
+            # и ответ, и его источники берём из одного результата поиска с ACL.
+            return question(message, tools)
+        return response("Не получилось проверить ответ по базе знаний. Попробуй задать вопрос ещё раз.")
     return result
 
 

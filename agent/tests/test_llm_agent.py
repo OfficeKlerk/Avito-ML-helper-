@@ -279,3 +279,65 @@ def test_model_gets_only_recent_and_trimmed_history(body, tools):
     sent = [m for m in model.requests[0][0] if m["role"] in ("user", "assistant")][:-1]  # без текущего сообщения
     assert len(sent) == 10 and sent[0]["content"].startswith("сообщение 10 ")
     assert all(len(m["content"]) <= 1500 for m in sent)
+
+
+def test_repeated_question_cannot_use_unverified_history(body, tools):
+    body.update(message="Как устроены правила компании?", state=None)
+    body["history"] = [{"role": "user", "text": body["message"]},
+                       {"role": "assistant", "text": "Согласование не требуется."}]
+    result = run(body, tools, ScriptedModel(say("Согласование не требуется.")))
+    assert result["sources"] and "Согласование не требуется." not in result["text"]
+    assert tools.calls[0] == ("knowledge_search", {"query": body["message"], "top_k": 3})
+
+
+@pytest.mark.parametrize("response", [[], ToolError("unavailable", "Поиск недоступен")])
+def test_omitted_search_never_adds_sources_to_invented_answer(body, tools, response):
+    body["message"] = "Где у нас парковка?"
+    tools.responses["knowledge_search"] = response
+    result = run(body, tools, ScriptedModel(say("Парковка на минус первом этаже.")))
+    assert "минус первом" not in result["text"] and result["sources"] == []
+    assert result["escalation"]["needed"]
+    assert result["status"] == ("degraded" if isinstance(response, ToolError) else "ok")
+
+
+@pytest.mark.parametrize("message", ["Привет!", "Спасибо большое", "Кто мой наставник?",
+                                     "Привет, как дела?", "Спасибо, всё понятно!"])
+def test_social_and_context_answers_need_no_knowledge_search(body, tools, message):
+    body["message"] = message
+    result = run(body, tools, ScriptedModel(say("Ответ из контекста.")))
+    assert result["text"] == "Ответ из контекста." and not tools.calls
+
+
+@pytest.mark.parametrize("continuing", [False, True])
+def test_explicit_date_creates_card_even_if_model_skips_tool(body, tools, continuing):
+    body.update(message="20 ноября" if continuing else "Подготовь черновик заявки на отгул на 20 ноября",
+                state={"intent": "absence_request", "kind": "day_off"} if continuing else None,
+                history=[{"role": "assistant", "text": "Черновик на прошлую пятницу уже создан."}])
+    result = run(body, tools, ScriptedModel(say("Черновик создан, подтверди его.")))
+    assert len(result["proposed_actions"]) == 1 and "20.11.2026" in result["text"]
+    calls = [args for name, args in tools.calls if name == "absence_create_draft"]
+    assert len(calls) == 1 and calls[0]["date_from"] == "2026-11-20"
+    assert calls[0]["idempotency_key"] == f"{body['request_id']}:absence_create_draft"
+
+
+def test_refused_draft_is_not_retried_by_completion_guard(body, tools):
+    body["message"] = "Оформи отгул на 13 ноября"
+    tools.responses["absence_create_draft"] = ToolError("forbidden", "Операция запрещена")
+    result = run(body, tools, ScriptedModel(call(("absence_create_draft", DRAFT_ARGS)), say("Операция запрещена.")))
+    assert result["proposed_actions"] == [] and result["text"] == "Операция запрещена."
+    assert [name for name, _ in tools.calls] == ["absence_create_draft"]
+
+
+@pytest.mark.parametrize("message", ["Не оформляй отгул на 20 ноября", "Моя заявка на отгул на 20 ноября уже согласована?",
+                                     "20 ноября, но не создавай пока заявку"])
+def test_mention_of_date_does_not_authorize_guard_to_create_draft(body, tools, message):
+    body["message"] = message
+    body["state"] = {"intent": "absence_request", "kind": "day_off"}
+    run(body, tools, ScriptedModel(say("Новую заявку не создаю.")))
+    assert not tools.calls
+
+
+def test_omitted_search_respects_tool_budget(body, tools):
+    body["message"] = "Где парковка?"
+    result = run(body, tools, ScriptedModel(say("На первом этаже.")), max_tool_calls=0)
+    assert "проверить" in result["text"] and not tools.calls
